@@ -25,7 +25,7 @@ STUDY_CATEGORIES = {
     "physics",
     "chemistry",
     "biology",
-    "computer_science",
+    "computer science",
     "engineering",
     "law",
     "economics",

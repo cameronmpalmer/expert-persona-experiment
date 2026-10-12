@@ -62,7 +62,7 @@ API_URL = "https://openrouter.ai/api/v1/chat/completions"
 DEFAULT_MODEL = "inclusionai/ling-3.0-flash"
 
 ROOT = find_repo_root(Path(__file__).resolve().parent)
-QUESTIONS_FILE = ROOT / "data" / "mmlu_pro_sample.json"
+QUESTIONS_FILE = ROOT / "data" / "mmlu_pro_sample_50.json"
 RESULTS_DIR = ROOT / "results"
 
 REQUEST_TIMEOUT = 180
@@ -112,15 +112,18 @@ def reasoning_tag(reasoning_mode, reasoning_value):
     return str(reasoning_value)
 
 
-def output_path(model, tag=None, stamp=None):
+def output_path(model, count=None, tag=None, stamp=None):
     """Default results file for a model.
 
-    results/{slug}__{tag}__{stamp}.json, where `tag` is the reasoning_tag (for
-    example none, high, or maxtokens4096) and `stamp` is the run-start timestamp.
-    The tag keeps runs at different reasoning levels apart, and the stamp keeps
-    each run unique; either may be omitted.
+    results/{slug}__{count}q__{tag}__{stamp}.json, where `count` is the number of
+    questions, `tag` is the reasoning_tag (for example none, high, or
+    maxtokens4096), and `stamp` is the run-start timestamp. The count separates
+    runs of different sizes, the tag separates reasoning levels, and the stamp
+    keeps each run unique; any part may be omitted.
     """
     parts = [slugify(model)]
+    if count:
+        parts.append(f"{count}q")
     if tag:
         parts.append(tag)
     if stamp:
@@ -131,8 +134,9 @@ def output_path(model, tag=None, stamp=None):
 def latest_results_path(model, reasoning_mode, reasoning_value, results_dir=None):
     """Newest existing results file for `model` at this reasoning setting, or None.
 
-    Matches the current tag names (results/{slug}__{tag}__{stamp}.json) plus the
-    legacy names (results/{slug}__think__(stamp).json when thinking is on, or
+    Matches the current names (results/{slug}__{count}q__{tag}__{stamp}.json, or
+    the same without the count) plus the legacy names
+    (results/{slug}__think__(stamp).json when thinking is on, or
     results/{slug}__(stamp).json when it is off), then returns the most recently
     modified match.
     """
@@ -140,7 +144,7 @@ def latest_results_path(model, reasoning_mode, reasoning_value, results_dir=None
     slug = re.escape(slugify(model))
     tag = re.escape(reasoning_tag(reasoning_mode, reasoning_value))
     stamp = r"(__\d{8}-\d{6})?"
-    patterns = [rf"^{slug}__{tag}__\d{{8}}-\d{{6}}\.json$"]
+    patterns = [rf"^{slug}__(?:\d+q__)?{tag}__\d{{8}}-\d{{6}}\.json$"]
     if thinking_enabled(reasoning_mode, reasoning_value):
         patterns.append(rf"^{slug}__think{stamp}\.json$")
     else:
@@ -486,7 +490,7 @@ def parse_args(argv):
     p.add_argument(
         "--questions-file",
         default=None,
-        help="question JSON to run (default data/mmlu_pro_sample.json)",
+        help="question JSON to run (default data/mmlu_pro_sample_50.json)",
     )
     p.add_argument("--limit", type=int, default=None)
     p.add_argument("--workers", type=int, default=DEFAULT_WORKERS)
@@ -584,9 +588,9 @@ def main(argv=None):
         out_path = latest_results_path(args.model, reasoning_mode, reasoning_value)
         if out_path is None:
             print(f"--resume: no existing results for {args.model}; starting a new run.")
-            out_path = output_path(args.model, tag, stamp)
+            out_path = output_path(args.model, n, tag, stamp)
     else:
-        out_path = output_path(args.model, tag, stamp)
+        out_path = output_path(args.model, n, tag, stamp)
 
     if args.dry_run:
         planned = n * len(CONDITIONS)

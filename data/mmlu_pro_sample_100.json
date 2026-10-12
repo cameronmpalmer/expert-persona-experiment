@@ -1,0 +1,1774 @@
+[
+  {
+    "id": "01",
+    "category": "biology",
+    "question": "Why is the drop in blood pressure important in retaining fluid within the capillaries?",
+    "options": [
+      "The drop in blood pressure causes blood clotting",
+      "The drop in blood pressure causes an increase in plasma protein concentration",
+      "The drop in blood pressure stimulates the excretion of fluids by the kidneys",
+      "The drop in blood pressure causes dehydration",
+      "The drop in blood pressure triggers the release of antidiuretic hormone",
+      "The drop in blood pressure decreases the permeability of capillary walls",
+      "The drop in blood pressure allows reabsorption of the lost fluid",
+      "The drop in blood pressure increases the heart rate",
+      "The drop in blood pressure leads to a constriction of the capillaries",
+      "The drop in blood pressure activates the sympathetic nervous system"
+    ],
+    "answer_index": 6
+  },
+  {
+    "id": "02",
+    "category": "biology",
+    "question": "Two races of corn averaging 48 and 72 inches in height are crossed. The height of the F_1 generation does not vary very much, averaging 60 inches. When 500 of these plants were classified, two were 48 inches, and two were 72 inches, the rest falling between these in height. What is the number of polygenesinvolved, and how many inches does each contribute?",
+    "options": [
+      "Eleven polygenes, 2.2 inches each",
+      "Three polygenes, 8 inches each",
+      "Five polygenes, 4.8 inches each",
+      "Six polygenes, 4 inches each",
+      "Twelve polygenes, 2 inches each",
+      "Eight polygenes, 3 inches each",
+      "Seven polygenes, 3.4 inches each",
+      "Four polygenes, 6 inches each",
+      "Nine polygenes, 2.7 inches each",
+      "Ten polygenes, 2.4 inches each"
+    ],
+    "answer_index": 5
+  },
+  {
+    "id": "03",
+    "category": "biology",
+    "question": "From a patch of garden peas, a random sampling of 13 plants is made. Their height in centimetres is as follows: 161183177157181176180 162163174179169187 Calculate: (a)themean;(b) the median;(c) the mode; (d)thevariance;(e) the standard deviation.",
+    "options": [
+      "Mean: 174 cm, Median: 180 cm, Mode: 180-185, Variance: 100.33 cm^2, Standard deviation: 10.02 cm",
+      "Mean: 171 cm, Median: 170 cm, Mode: 168-173, Variance: 80.33 cm^2, Standard deviation: 8.96 cm",
+      "Mean: 176 cm, Median: 173 cm, Mode: 174-179, Variance: 88.33 cm^2, Standard deviation: 9.40 cm",
+      "Mean: 175 cm, Median: 178 cm, Mode: 177-181, Variance: 95.33 cm^2, Standard deviation: 9.80 cm",
+      "Mean: 169 cm, Median: 172 cm, Mode: 167-172, Variance: 76.33 cm^2, Standard deviation: 8.73 cm",
+      "Mean: 170 cm, Median: 175 cm, Mode: 160-165, Variance: 85.33 cm^2, Standard deviation: 9.24 cm",
+      "Mean: 178 cm, Median: 179 cm, Mode: 177-182, Variance: 105.33 cm^2, Standard deviation: 10.26 cm",
+      "Mean: 172 cm, Median: 177 cm, Mode: 175-180, Variance: 90.33 cm^2, Standard deviation: 9.50 cm",
+      "Mean: 177 cm, Median: 174 cm, Mode: 170-175, Variance: 82.33 cm^2, Standard deviation: 9.07 cm",
+      "Mean: 173 cm, Median: 176 cm, Mode: 176-180, Variance: 92.33 cm^2, Standard deviation: 9.61 cm"
+    ],
+    "answer_index": 9
+  },
+  {
+    "id": "04",
+    "category": "biology",
+    "question": "Two xylem plant cell types that provide support and conduct water and minerals are the",
+    "options": [
+      "parenchyma and companion cells",
+      "tracheids and vessel elements",
+      "parenchyma and collenchyma",
+      "sieve tube members and companion cells",
+      "collenchyma and vessel elements",
+      "vessel elements and companion cells",
+      "sieve tube members and tracheids",
+      "collenchyma and sclerenchyma",
+      "vessel elements and sclerenchyma",
+      "tracheids and companion cells"
+    ],
+    "answer_index": 1
+  },
+  {
+    "id": "05",
+    "category": "biology",
+    "question": "What prevents the stomach from being digested by itsown secretions?",
+    "options": [
+      "The stomach has a high permeability to hydrogen ions",
+      "The presence of beneficial bacteria that neutralize stomach acid",
+      "The stomach lining is replaced every month",
+      "The stomach lining secretes digestive enzymes only when food is present",
+      "The production of bile in the stomach neutralizes the digestive acids",
+      "A thick layer of muscle tissue that is resistant to digestive enzymes and acids",
+      "The stomach is protected by a layer of fat",
+      "The mucus layer, the permeability of the membranes and the continual replacement of the cells comprising the lining all help protect the stomach from being digested by its own secretions.",
+      "The stomach secretes a special hormone that prevents digestion of its own tissues",
+      "The stomach contents are too acidic for the enzymes to function properly"
+    ],
+    "answer_index": 7
+  },
+  {
+    "id": "06",
+    "category": "biology",
+    "question": "In certain abnormal conditions, the stomach does not secretehydrochloric acid. What effects might this haveon thedigestive process?",
+    "options": [
+      "Without HCl, more bacteria would be killed in the stomach.",
+      "No HCl would lead to reduced mucus production in the stomach lining.",
+      "The absence of HCl would cause the stomach to digest its own tissues.",
+      "No HCl in the stomach would significantly increase the pH of the small intestine.",
+      "The absence of HCl would speed up the digestive process.",
+      "Lack of HCl would result in higher absorption of iron and vitamin B12.",
+      "No HCl would increase the activity of gastric enzymes.",
+      "Without HCl, fats would be completely indigestible.",
+      "The absence of HCl would lead to some loss of protein digestion, difficulty in protein denaturation, inability to kill ingested bacteria and a decrease in pancreatic secretion.",
+      "Without HCl, carbohydrates would not be digested at all."
+    ],
+    "answer_index": 8
+  },
+  {
+    "id": "07",
+    "category": "biology",
+    "question": "Which of the following is the direct energy source that allows ATP synthase to produce ATP in mitochondria?",
+    "options": [
+      "The combination of acetyl-CoA with oxaloacetate in the citric acid cycle",
+      "The reduction of NAD+ during the conversion of pyruvate to acetyl-CoA",
+      "The reduction of FAD+ during the conversion of succinate to fumarate in the citric acid cycle",
+      "ATP molecules directly providing energy for the process",
+      "ADP molecules flowing down a gradient across the mitochondrial inner membrane",
+      "The energy of glucose breaking down into pyruvate during glycolysis",
+      "The energy of electrons passing along the electron transport chain",
+      "NADH diffusing from the mitochondrial intermembrane space to the matrix",
+      "The oxidation of FADH2 during the electron transport chain",
+      "H+ ions flowing down a gradient across the mitochondrial inner membrane"
+    ],
+    "answer_index": 9
+  },
+  {
+    "id": "08",
+    "category": "biology",
+    "question": "Theglomerularfiltration rate is controlled primarily by alteration of theglomerularcapillary pressure. What are the two factors which produce these changes?",
+    "options": [
+      "Glomerular capillary pressure and blood volume",
+      "Diameter of the efferent arterioles and plasma protein concentration",
+      "Renal blood flow and the concentration of sodium in the distal tubule",
+      "Arterial blood pressure and diameter of the afferent arterioles",
+      "Kidney size and blood urea nitrogen levels",
+      "Interstitial fluid pressure and the concentration of glucose in the blood",
+      "Hormonal regulation by antidiuretic hormone (ADH) and aldosterone levels",
+      "Sympathetic nervous system activity and atrial natriuretic peptide (ANP)",
+      "Concentration of electrolytes in the blood and the rate of tubular secretion",
+      "Blood viscosity and heart rate"
+    ],
+    "answer_index": 3
+  },
+  {
+    "id": "09",
+    "category": "biology",
+    "question": "One pair of genes for coat color in cats is sex-linked. The gene B produces yellow coat, b produces black coat, and the heterozygous Bb produces tortoiseshell coat. What kind of offspring will result from the mating of a black male and a tortoiseshell female?",
+    "options": [
+      "(1/4) tortoise-shell females, (1/4) black females, (1/4) yellow males, and (1/4) black males",
+      "All yellow males",
+      "(1/2) yellow females and (1/2) black males",
+      "(1/2) black females and (1/2) yellow males",
+      "(1/3) black males, (1/3) yellow males, and (1/3) tortoiseshell females",
+      "All black offspring",
+      "All black males",
+      "(1/2) yellow males and (1/2) tortoiseshell females",
+      "All tortoise-shell females",
+      "(1/2) tortoiseshell females and (1/2) black males"
+    ],
+    "answer_index": 0
+  },
+  {
+    "id": "10",
+    "category": "biology",
+    "question": "What hormone is responsible for metamorphosis in amphibians?",
+    "options": [
+      "growth hormone",
+      "estrogen",
+      "thyroxine",
+      "insulin",
+      "prolactin",
+      "testosterone",
+      "cortisol",
+      "adrenaline",
+      "melatonin",
+      "progesterone"
+    ],
+    "answer_index": 2
+  },
+  {
+    "id": "11",
+    "category": "biology",
+    "question": "A female fruit fly bearing linked genes that produce the phenotype gray body and normal wings mates with a male fruit fly of phenotype black body and vestigial wings. The presence of gray-bodied, vestigialwinged flies among the progeny is best explained by",
+    "options": [
+      "penetrance",
+      "independent assortment",
+      "genetic drift",
+      "incomplete dominance",
+      "crossing over",
+      "mutation",
+      "codominance",
+      "non-disjunction",
+      "transcription error",
+      "segregation of alleles"
+    ],
+    "answer_index": 4
+  },
+  {
+    "id": "12",
+    "category": "chemistry",
+    "question": "Calculate the uncertainty in the location of a 100 g turtle crossing a road at a velocity of 1 mm/sec, the uncertainty of the latter being 10^-4 mm/sec. (h = 6.626 \u00d7 10^-27 erg-sec and 10 mm = 1 cm.)",
+    "options": [
+      "6.626 \u00d7 10^-21 cm",
+      "6.626 \u00d7 10^-28 cm",
+      "6.626 \u00d7 10^-24 cm",
+      "6.626 \u00d7 10^-23 cm",
+      "6.626 \u00d7 10^-27 cm",
+      "6.626 \u00d7 10^-22 cm",
+      "6.626 \u00d7 10^-29 cm",
+      "6.626 \u00d7 10^-20 cm",
+      "6.626 \u00d7 10^-26 cm",
+      "6.626 \u00d7 10^-25 cm"
+    ],
+    "answer_index": 2
+  },
+  {
+    "id": "13",
+    "category": "chemistry",
+    "question": "Baking powder consists of a mixture of cream of tartar (potassium hydrogen tartrate, KHC_4 H_4 O_6, molecular weight = 188 g/mole) and baking soda (sodium bicarbonate, NaHC0_3, molecular weight = 84 g/mole). These two components react according to the equation KHC_4 H_4 O_6 + NaHCO_3 \\rightarrow KNaC_4 H_4 O_6 + H_2 O + CO_2. How much baking soda must be added to 8.0 g of cream of tartar for both materials to react completely?",
+    "options": [
+      "2.8 g of baking soda",
+      "5.1 g of baking soda",
+      "6.2 g of baking soda",
+      "3.2 g of baking soda",
+      "7.0 g of baking soda",
+      "2.2 g of baking soda",
+      "4.0 g of baking soda",
+      "4.3 g of baking soda",
+      "1.7 g of baking soda",
+      "3.6 g of baking soda"
+    ],
+    "answer_index": 9
+  },
+  {
+    "id": "14",
+    "category": "chemistry",
+    "question": "Find the number of CSFs in a full CI calculation of $\\mathrm{CH}_2 \\mathrm{SiHF}$ using a 6-31G** basis set.",
+    "options": [
+      "2.98$10^{29} $",
+      "1.86$10^{28} $",
+      "1.23$10^{30} $",
+      "9.45$10^{27} $",
+      "2.11$10^{30} $",
+      "7.54$10^{26} $",
+      "4.67$10^{28} $",
+      "1.02$10^{29} $",
+      "3.72$10^{28} $",
+      "5.89$10^{27} $"
+    ],
+    "answer_index": 1
+  },
+  {
+    "id": "15",
+    "category": "chemistry",
+    "question": "Assume all gases are perfect unless stated otherwise. Note that 1 atm = 1.013 25 bar. Unless otherwise stated, thermochemical data are for 298.15 K. Take nitrogen to be a van der Waals gas with $a=1.352 \\mathrm{dm}^6 \\mathrm{~atm} \\mathrm{\\textrm {mol } ^ { - 2 }}$ and $b=0.0387 \\mathrm{dm}^3 \\mathrm{~mol}^{-1}$, and calculate $\\Delta H_{\\mathrm{m}}$ when the pressure on the gas is decreased from $500 \\mathrm{~atm}$ to $1.00 \\mathrm{~atm}$ at $300 \\mathrm{~K}$. For a van der Waals gas, $\\mu=\\{(2 a / R T)-b\\} / C_{p, \\mathrm{~m}}$. Assume $C_{p, \\mathrm{~m}}=\\frac{7}{2} R$.",
+    "options": [
+      "-2.15$\\text{kJ}$",
+      "+4.85$\\text{kJ}$",
+      "+3.60$\\text{kJ}$ ",
+      "+2.10$\\text{kJ}$",
+      "+5.30$\\text{kJ}$",
+      "+1.75$\\text{kJ}$",
+      "-3.75$\\text{kJ}$",
+      "-0.95$\\text{kJ}$",
+      "+6.25$\\text{kJ}$",
+      "-1.25$\\text{kJ}$"
+    ],
+    "answer_index": 2
+  },
+  {
+    "id": "16",
+    "category": "chemistry",
+    "question": "An E. coli culture will grow to a limiting concentration of about 10^9 cell per cm^3. At this concentration what percentage of the total volume of the culture medium is occupied by the cells? Assume that an E. coli cell is cylindrical and that it is 2.0\\mu long and has a 1.0\\mu diameter.",
+    "options": [
+      "0.25%",
+      "0.57%",
+      "0.0314%",
+      ".0157%",
+      "1.57%",
+      "3.14%",
+      "25%",
+      "15.7%",
+      ".157%",
+      "5.7%"
+    ],
+    "answer_index": 8
+  },
+  {
+    "id": "17",
+    "category": "chemistry",
+    "question": "When 4.90 g of KCLO_3 was heated, it showed a weight loss of 0.384 g. Find the percent of the original KCLO_3 that had decomposed.",
+    "options": [
+      "50%",
+      "20%",
+      "30%",
+      "40%",
+      "25%",
+      "10%",
+      "7.84%",
+      "35%",
+      "18%",
+      "15%"
+    ],
+    "answer_index": 1
+  },
+  {
+    "id": "18",
+    "category": "chemistry",
+    "question": "Which of the following is an n-type semiconductor?",
+    "options": [
+      "Silicon",
+      "Boron-doped silicon",
+      "Pure germanium",
+      "Arsenic-doped silicon",
+      "Indium Phosphide",
+      "Zinc-doped silicon",
+      "Pure silicon",
+      "Gallium arsenide",
+      "Silicon carbide",
+      "Diamond"
+    ],
+    "answer_index": 3
+  },
+  {
+    "id": "19",
+    "category": "chemistry",
+    "question": "The specific rotation [(\\alpha)^25\u00b0_D] of L-alanine is + 1.8. The specific rotation [(\\alpha)^25\u00b0_D] of L-alanine is + 1.8. Calculate the observed rotation of a 1.10 M solution in a 2.5-dm polarimeter tube at 25\u00b0C.",
+    "options": [
+      "2.20\u00b0",
+      "1.76\u00b0",
+      "5.28\u00b0",
+      "3.96\u00b0",
+      "0.44\u00b0",
+      "4.40\u00b0",
+      "0.22\u00b0",
+      "1.10\u00b0",
+      "0.88\u00b0",
+      "2.64\u00b0"
+    ],
+    "answer_index": 4
+  },
+  {
+    "id": "20",
+    "category": "chemistry",
+    "question": "What is the ionization constant, Ka, for a weak monoprotic acid if a 0.060 molar solution has a pH of 2.0?",
+    "options": [
+      "3.0 \u00d7 10^-3",
+      "2.0 \u00d7 10^-3",
+      "1.7 \u00d7 10^-1",
+      "1.5 \u00d7 10^-2",
+      "2.0 \u00d7 10^-1",
+      "2.5 \u00d7 10^-2",
+      "1.5 \u00d7 10^-1",
+      "5.0 \u00d7 10^-3",
+      "1.0 \u00d7 10^-2",
+      "4.0 \u00d7 10^-3"
+    ],
+    "answer_index": 1
+  },
+  {
+    "id": "21",
+    "category": "chemistry",
+    "question": "Which one of the following statements is true:",
+    "options": [
+      "Protons and neutrons possess orbital angular momentum only.",
+      "Protons and neutrons possess spin angular momentum only.",
+      "Protons possess orbital angular momentum only, neutrons possess spin angular momentum only.",
+      "Protons and neutrons have orbital and spin angular momentum.",
+      "Neutrons and protons possess both orbital and spin angular momentum.",
+      "Neutrons possess orbital angular momentum only, protons possess both orbital and spin angular momentum.",
+      "Protons and neutrons possess neither orbital nor spin angular momentum.",
+      "Neutrons have orbital and spin angular momentum, protons have spin angular momentum only.",
+      "Protons possess spin angular momentum only, neutrons possess orbital angular momentum only.",
+      "Protons have orbital and spin angular momentum, neutrons have spin angular momentum."
+    ],
+    "answer_index": 0
+  },
+  {
+    "id": "22",
+    "category": "chemistry",
+    "question": "Of the following compounds, which has the lowest melting point?",
+    "options": [
+      "NaCl",
+      "LiCl",
+      "AlCl3",
+      "KCl",
+      "FeCl3",
+      "AgCl",
+      "CaCl2",
+      "HCl",
+      "MgCl2",
+      "CCl4"
+    ],
+    "answer_index": 7
+  },
+  {
+    "id": "23",
+    "category": "chemistry",
+    "question": "A line in the Lyman series of hydrogen has a wavelength of $1.03 \\times 10^{-7} \\mathrm{~m}$. Find the original energy level of the electron.",
+    "options": [
+      "1",
+      "8",
+      "6",
+      "4",
+      "2",
+      "10",
+      "7",
+      "9",
+      "5",
+      "3"
+    ],
+    "answer_index": 9
+  },
+  {
+    "id": "24",
+    "category": "computer science",
+    "question": "When does a buffer overflow occur, generally speaking?",
+    "options": [
+      "when copying a buffer from the stack to the heap",
+      "when writing to a pointer that has been freed",
+      "when the program runs out of memory",
+      "when a pointer is used to access memory not allocated to it",
+      "when a buffer is not initialized before being used",
+      "when reading from a buffer that has been freed",
+      "when a program tries to access a buffer that has not been declared",
+      "when a buffer is empty and a read operation is attempted",
+      "when the program notices a buffer has filled up, and so starts to reject requests"
+    ],
+    "answer_index": 3
+  },
+  {
+    "id": "25",
+    "category": "computer science",
+    "question": "Assume that a debugger places a breakpoint at a load instruction at virtual address 0x77E81234 (hexadecimal notation) in a debugged process P. If the text segment of P begins at 0x77E80000 in P\u2019s virtual address space and if the debugger has mapped this same text segment at 0x01000000 in its virtual address space, which of the following is the virtual address used by the debugger in its WRITE operation, along with a description of how the debugger has mapped the virtual memory page containing this address?",
+    "options": [
+      "0x76E81234; page mapped with READ-ONLY access",
+      "0x77E81234; page mapped with READ/WRITE access",
+      "0x76E81234; page mapped with COPY-ON-WRITE access",
+      "0x01000000; page mapped with COPY-ON-WRITE access",
+      "0x01000000; page mapped with READ/WRITE access",
+      "0x01001234; page mapped with COPY-ON-WRITE access",
+      "0x76E81234; page mapped with READ/WRITE access",
+      "0x01001234; page mapped with READ-ONLY access",
+      "0x77E81234; page mapped with COPY-ON-WRITE access",
+      "0x01001234; page mapped with READ/WRITE access"
+    ],
+    "answer_index": 9
+  },
+  {
+    "id": "26",
+    "category": "computer science",
+    "question": "What are the port states determined by Nmap?",
+    "options": [
+      "Closed, unused, half-closed",
+      "Open, half-open, closed ",
+      "Open, blocked, filtered",
+      "Active, passive, blocked",
+      "Closed, filtered, unfiltered",
+      "Open, filtered, unfiltered",
+      "Active, inactive, standby",
+      "Open, unused, blocked",
+      "Active, closed, unused",
+      "Active, passive, filtered"
+    ],
+    "answer_index": 5
+  },
+  {
+    "id": "27",
+    "category": "computer science",
+    "question": "Statement 1| A neural network's convergence depends on the learning rate. Statement 2| Dropout multiplies randomly chosen activation values by zero.",
+    "options": [
+      "Not given, Not given",
+      "True, False",
+      "Not given, False",
+      "False, Not given",
+      "Not given, True",
+      "True, True",
+      "True, Not given",
+      "False, True",
+      "False, Not applicable",
+      "False, False"
+    ],
+    "answer_index": 5
+  },
+  {
+    "id": "28",
+    "category": "computer science",
+    "question": "Consider that the following two signals: $x(t)$ and $v(t)$ $$ x(t)=\\left\\{\\begin{array}{cc} 1 & 0 \\leq t \\leq 3 \\\\ 0 & \\text { otherwise } \\end{array} \\quad v(t)=\\left\\{\\begin{array}{cc} 1 & 0 \\leq t \\leq 2 \\\\ 0 & \\text { otherwise } \\end{array}\\right.\\right. $$ Let $y(\\tau)=\\int_{-\\infty}^{\\infty} x(\\tau-t) v(t) d t$. Let $\\tau=2.5$. Determine $y(\\tau)$.",
+    "options": [
+      "3",
+      "2.5",
+      "2",
+      "1.75",
+      "0.5",
+      "3.5",
+      "0",
+      "1",
+      "1.5",
+      "4"
+    ],
+    "answer_index": 2
+  },
+  {
+    "id": "29",
+    "category": "computer science",
+    "question": "There are only three active stations in a slotted Aloha network: A, B and C. Each station generates a frame in a time slot with the corresponding probabilities p_A=0.2, p_B=0.3 and p_C=0.4 respectively. What is the normalized throughput of the system?",
+    "options": [
+      "0.700",
+      "0.275",
+      "0.250",
+      "0.300",
+      "0.528",
+      "0.452",
+      "0.600",
+      "0.485",
+      "0.350",
+      "0.500"
+    ],
+    "answer_index": 5
+  },
+  {
+    "id": "30",
+    "category": "computer science",
+    "question": "A network with one primary and four secondary stations uses polling. The size of a data frame is 1000 bytes. The size of the poll, ACK, and NAK frames are 32 bytes each. Each station has 5 frames to send. How many total bytes are exchanged if each station can send only one frame in response to a poll?",
+    "options": [
+      "19536",
+      "20000",
+      "20500",
+      "22000",
+      "23000",
+      "24000",
+      "25000",
+      "26000",
+      "21536",
+      "18000"
+    ],
+    "answer_index": 8
+  },
+  {
+    "id": "31",
+    "category": "computer science",
+    "question": "Illustrate transfer of control in a PL/I program, usingGOTO statements.",
+    "options": [
+      "The GOTO statement in PL/I program doesn't alter the processing sequence.",
+      "The GOTO statement in a PL/I program resumes processing at the next function or procedure.",
+      "The GOTO statement in PL/I program alters the processing sequence, discontinues the normal sequential execution and processing resumes at a point that is indicated by a label.",
+      "The GOTO statement in a PL/I program creates a subroutine call to a labeled section of the code.",
+      "The GOTO statement continues the sequential execution.",
+      "The GOTO statement in a PL/I program is used to repeat the execution of a loop from the beginning.",
+      "The GOTO statement in a PL/I program is a conditional statement that only executes if a specified condition is true.",
+      "The GOTO statement in a PL/I program causes the program to terminate immediately.",
+      "The GOTO statement in PL/I program processing resumes at a point without a label.",
+      "The GOTO statement in a PL/I program pauses execution and waits for user input before continuing."
+    ],
+    "answer_index": 2
+  },
+  {
+    "id": "32",
+    "category": "economics",
+    "question": "Unlike a perfectly competitive firm, a monopoly",
+    "options": [
+      "operates in an industry with easy entry and exit",
+      "will charge the highest price it can on the demand curve",
+      "will always make a profit in the short run",
+      "can increase its profit by increasing its output",
+      "faces a perfectly elastic demand curve",
+      "faces a downward sloping demand curve",
+      "has an upward sloping total revenue curve",
+      "has a downward sloping total revenue curve",
+      "faces an upward sloping demand curve",
+      "has a horizontal marginal revenue curve"
+    ],
+    "answer_index": 5
+  },
+  {
+    "id": "33",
+    "category": "economics",
+    "question": "Suppose the government seeks to achieve a balanced budgetby levying taxes of $100 billion and making expendituresof $100 billion. How will this affect NNP if MPC = 0.8?",
+    "options": [
+      "Decrease of $500 billion in NNP",
+      "Increase of $500 billion in NNP",
+      "Decrease of $100 billion in NNP",
+      "No change in NNP because taxes cancel out expenditures",
+      "Increase of $200 billion in NNP",
+      "Decrease of $80 billion in NNP",
+      "Increase of $100 billion in NNP",
+      "Increase of $50 billion in NNP",
+      "No change in NNP",
+      "Decrease of $20 billion in NNP"
+    ],
+    "answer_index": 6
+  },
+  {
+    "id": "34",
+    "category": "economics",
+    "question": "The aggregate demand curve is",
+    "options": [
+      "not found by adding product demand curves horizontally or vertically",
+      "a vertical summation of market demand curves",
+      "found by adding product demand curves both horizontally and vertically",
+      "a horizontal subtraction of firm demand curves",
+      "a simple aggregation of demand curves for individual goods",
+      "a vertical subtraction of market demand curves",
+      "a simple aggregation of supply curves for individual goods",
+      "a horizontal summation of firm demand curves",
+      "a horizontal summation of market demand curves",
+      "a vertical summation of firm demand curves"
+    ],
+    "answer_index": 0
+  },
+  {
+    "id": "35",
+    "category": "economics",
+    "question": "What is the difference in the way prices are determinedin centrallyplanned vs. capitalist economies? What consequencesdoes this difference have in terms of the functionprices perform in the two systems?",
+    "options": [
+      "In capitalist economies, prices are set by international regulatory bodies, while centrally planned economies allow for individual negotiation of prices.",
+      "Centrally planned economies have prices that are fixed at the beginning of each fiscal year, while capitalist economies allow prices to fluctuate daily based on stock market trends.",
+      "Prices in both systems are determined by a central authority, but the criteria for setting prices differ.",
+      "Capitalist economies fix prices based on production costs alone, while centrally planned economies adjust prices according to social welfare goals.",
+      "Centrally planned economies use market signals to set prices, whereas capitalist economies use government committees.",
+      "Prices in centrally planned economies reflect consumer demand",
+      "Prices in capitalist economies are determined by central planning, while in centrally planned economies prices are set through competitive bidding.",
+      "Both systems use market-determined prices",
+      "Market-determined prices reflect relative consumer demands and relative scarcities of goods, while prices set by central planning agencies are for judging the comparative technical efficiency of various production units.",
+      "Prices are set by the government in capitalist economies"
+    ],
+    "answer_index": 8
+  },
+  {
+    "id": "36",
+    "category": "economics",
+    "question": "If current real GDP is $5000 and full employment real GDP is at $4000 which of the following combinations of policies is the most likely to have brought the economy to this point?",
+    "options": [
+      "A decrease in taxes and buying bonds in an open market operation",
+      "An increase in government spending and an increase in taxes",
+      "An increase in taxes and selling bonds in an open market operation",
+      "An increase in taxes and a lower discount rate",
+      "A decrease in taxes and selling bonds in an open market operation",
+      "A decrease in taxes and a lower discount rate",
+      "An increase in government spending and a decrease in taxes",
+      "A decrease in government spending and an increase in the discount rate",
+      "A decrease in government spending and a decrease in the discount rate",
+      "An increase in government spending and an increase in the discount rate"
+    ],
+    "answer_index": 5
+  },
+  {
+    "id": "37",
+    "category": "economics",
+    "question": "Which of the following statements is correct in regard to the federal budget deficit and the federal debt?",
+    "options": [
+      "The debt is the sum of all past and future deficits.",
+      "When the debt is positive the deficit decreases.",
+      "When the deficit is negative the debt decreases.",
+      "The deficit is the accumulation of past debts.",
+      "When the debt is negative the deficit decreases.",
+      "The deficit is the accumulation of future debts.",
+      "The deficit and the debt are always equal.",
+      "When the deficit is positive the debt decreases.",
+      "When the debt is positive the deficit increases.",
+      "When the debt is negative the deficit increases."
+    ],
+    "answer_index": 2
+  },
+  {
+    "id": "38",
+    "category": "engineering",
+    "question": "Water flows through a galvanized iron pipe at a rate of 3 ft^3/s. If the pressure loss is 5 ft. per 1000 ft. of flow, determine the size of the pipe.",
+    "options": [
+      "1.25 ft",
+      "0.965 ft",
+      "1.85 ft",
+      "1.2 \u00d7 10^6",
+      "0.926 ft",
+      "4.45 ft/s",
+      "0.75 ft",
+      "5.5 ft/s",
+      "2.5 ft/s",
+      "3.4 \u00d7 10^5"
+    ],
+    "answer_index": 1
+  },
+  {
+    "id": "39",
+    "category": "engineering",
+    "question": "A rigid vessel which has a volume of 0.5m^3 is filled with Freon-12 at 0.5 MPa, 50\u00b0C. It is then heated until the Freon-12 is fully saturated vapor. Calculate the heat transfer for this process.",
+    "options": [
+      "- 320 kJ",
+      "- 277.93 kJ",
+      "- 250 kJ",
+      "- 287.76 kJ",
+      "- 305.5 kJ",
+      "- 212.5 kJ",
+      "- 300 kJ",
+      "- 265 kJ",
+      "- 290 kJ",
+      "- 234 kJ"
+    ],
+    "answer_index": 1
+  },
+  {
+    "id": "40",
+    "category": "engineering",
+    "question": "An electromagnetic wave of40KHzis radiated by an antenna . Find the time taken by this wave to reach a point 60 km away.",
+    "options": [
+      "0.3 msec",
+      "0.8 msec",
+      "0.6 msec",
+      "0.25 msec",
+      "0.1 msec",
+      "0.2 msec",
+      "1.5 msec",
+      "0.4 msec",
+      "0.05 msec",
+      "0.9 msec"
+    ],
+    "answer_index": 5
+  },
+  {
+    "id": "41",
+    "category": "engineering",
+    "question": "A cast iron pipe of 4 in. inside diameter and 4.5 in. outside diameter is insulated with 3/4 in. layer of glass wool. The inside surface of the pipe is at 400\u00b0F and the glass wool outer surface is at 90\u00b0F. Determine the steady state heat transfer rate per foot length of the pipe. The thermal conductivity of the material of the pipe is 30 Btu/hr-ft-\u00b0F and that of the glass wool is 0.032 Btu/hr-ft-\u00b0F.",
+    "options": [
+      "220.5 Btu/hr-ft",
+      "190.22 Btu/hr-ft",
+      "216.56 Btu/hr-ft",
+      "200 Btu/hr-ft",
+      "205.75 Btu/hr-ft",
+      "230 Btu/hr-ft",
+      "235 Btu/hr-ft",
+      "250 Btu/hr-ft",
+      "175 Btu/hr-ft",
+      "180 Btu/hr-ft"
+    ],
+    "answer_index": 2
+  },
+  {
+    "id": "42",
+    "category": "engineering",
+    "question": "Check these flows for continuity and determine thevorticity ofeach: (a)v_t= 6r,v_r= 0; (b)v_t= 0,v_r= - 5/r.",
+    "options": [
+      "Flow (a) is rotational with a vorticity of 6, Flow (b) is rotational with a vorticity of -10",
+      "Both flows are rotational with vorticities of 6 and -10 respectively",
+      "Flow (a) is rotational with a vorticity of 12, Flow (b) is irrotational with a vorticity of 0",
+      "Flow (a) is irrotational with a vorticity of 0, Flow (b) is rotational with a vorticity of 12",
+      "Flow (a) is rotational with a vorticity of -12, Flow (b) is irrotational with a vorticity of 10",
+      "Flow (a) is rotational with a vorticity of 0, Flow (b) is irrotational with a vorticity of 12",
+      "Both flows are irrotational with vorticities of 0",
+      "Flow (a) has an undefined vorticity, Flow (b) is rotational with a vorticity of 5",
+      "Both flows are rotational with vorticities of 12 and 0 respectively",
+      "Flow (a) is irrotational with a vorticity of 12, Flow (b) is rotational with a vorticity of 0"
+    ],
+    "answer_index": 2
+  },
+  {
+    "id": "43",
+    "category": "engineering",
+    "question": "The magnetisation and applied field in ferromagnetic materials are related",
+    "options": [
+      "linearly.",
+      "cubically.",
+      "parabolically.",
+      "logarithmically.",
+      "hyperbolically.",
+      "inversely.",
+      "sinusoidally.",
+      "non linearly.",
+      "exponentially.",
+      "quadratically."
+    ],
+    "answer_index": 7
+  },
+  {
+    "id": "44",
+    "category": "engineering",
+    "question": "Find the Laplace transform of f(t) = t^n, where n is a positive integer.",
+    "options": [
+      "n^n / s^n",
+      "n! / s^n+1",
+      "n! / s^n+2",
+      "(n+1)! / s^n",
+      "n! / s^n",
+      "n! / (s+1)^n",
+      "n! / s^n-1",
+      "(n-1)! / s^n+1",
+      "(n+1)! / s^n+2",
+      "n! / (s-1)^n+1"
+    ],
+    "answer_index": 1
+  },
+  {
+    "id": "45",
+    "category": "engineering",
+    "question": "Calculate the spring rate of the mounting springs to reduce theunbalanced force by 15% for an engine. The engine weighs950 lbs. and functions at 1300 rpm. Number of springs= 4.",
+    "options": [
+      "1750 lb./in.",
+      "1350 lb./in.",
+      "1600 lb./in.",
+      "1100 lb./in.",
+      "1484.4 lb./in.",
+      "1650 lb./in.",
+      "1900 lb./in.",
+      "1000 lb./in.",
+      "1225 lb./in.",
+      "1425 lb./in."
+    ],
+    "answer_index": 4
+  },
+  {
+    "id": "46",
+    "category": "engineering",
+    "question": "A liquid compressed in a cylinder has a volume of 1 liter (l) (1000 cm^3) at 1 MN/m^2 and a volume of 995 cm^3 at 2MN/m^2. What is the bulk modulus of elasticity?",
+    "options": [
+      "400 Mpa",
+      "600 Mpa",
+      "750 Mpa",
+      "150 Mpa",
+      "500 Mpa",
+      "250 Mpa",
+      "350 Mpa",
+      "200 Mpa",
+      "100 Mpa",
+      "300 Mpa"
+    ],
+    "answer_index": 7
+  },
+  {
+    "id": "47",
+    "category": "engineering",
+    "question": "What is the effect on the absorption rate due to raising the totalpressure from 1 to 3atmin the following situations : (I) The absorption of methane from an air-methane mixture which has 15 percent CH_4 by volume. Pure water is used as the solvent. Assume the gas film offers the main resistance to diffusion. (II) The absorption of CH_4 from an air-CH_4 mixture which has 25 percent CH_4 by volume. A solution of CH_4 in water is employed as the solvent. The vapor pressure of methane over the solution is 0.17 atm.",
+    "options": [
+      "Pressure change increases absorption rate by 10 percent in the first case, and has no effect in the second case",
+      "Pressure change increases the absorption rate in both cases",
+      "Pressure change has no effect on the absorption rate in the first case, and decreases the absorption rate by 30 percent in the second case",
+      "Pressure change decreases the absorption rate in both cases",
+      "Pressure change increases absorption rate by 25 percent in the first case, and decreases it by 10 percent in the second case",
+      "Pressure change causes a 50 percent gain in absorption rate in the first case, and has no effect in the second case",
+      "Pressure change causes a 75 percent decrease in absorption rate in the first case, and a 50 percent increase in the second case",
+      "Pressure change has no effect on the absorption rate in both cases",
+      "Pressure change decreases absorption rate by 15 percent in the first case, and increases it by 200 percent in the second case",
+      "Pressure change has no effect on the absorption rate in the first case, and causes a 126 percent gain in absorption in the second case"
+    ],
+    "answer_index": 9
+  },
+  {
+    "id": "48",
+    "category": "engineering",
+    "question": "A shaft has to transmit 30 hp at 400 rpm. The ultimate shear stress for the steel shaft is 60,000 psi with a factor of safety of 5. Determine the diameter if the shaft selected is to be a) solid and b) hollow with the ratio of inside diameter to outside diameter of 0.5.",
+    "options": [
+      "Solid shaft diameter: 1.625 in, Hollow shaft outer diameter: 1.625 in, Hollow shaft inner diameter: 0.8125 in",
+      "Solid shaft diameter: 1.2 in, Hollow shaft outer diameter: 1.2 in, Hollow shaft inner diameter: 0.6 in",
+      "Solid shaft diameter: 1.4 in, Hollow shaft outer diameter: 1.4 in, Hollow shaft inner diameter: 0.7 in",
+      "Solid shaft diameter: 1.5 in, Hollow shaft outer diameter: 1.5 in, Hollow shaft inner diameter: 0.75 in",
+      "Solid shaft diameter: 1.25 in, Hollow shaft outer diameter: 1.25 in, Hollow shaft inner diameter: 0.625 in",
+      "Solid shaft diameter: 1.375 in, Hollow shaft outer diameter: 1.375 in, Hollow shaft inner diameter: 0.69 in",
+      "Solid shaft diameter: 2 in, Hollow shaft outer diameter: 2 in, Hollow shaft inner diameter: 1 in",
+      "Solid shaft diameter: 1.125 in, Hollow shaft outer diameter: 1.125 in, Hollow shaft inner diameter: 0.5625 in",
+      "Solid shaft diameter: 1 5/16 in, Hollow shaft outer diameter: 1 5/16 in, Hollow shaft inner diameter: 0.66 in",
+      "Solid shaft diameter: 1.75 in, Hollow shaft outer diameter: 1.75 in, Hollow shaft inner diameter: 0.875 in"
+    ],
+    "answer_index": 8
+  },
+  {
+    "id": "49",
+    "category": "engineering",
+    "question": "A (1/4) in. thick belt operates on a 1 ft. pulley rotating at 800 rpm and delivers 25 hp. Calculate the belt width based on the following data: a) the allowable belt stress is 550 psi. b) the angle of contact is 160 degrees. c) the coefficient of friction is 0.45. d) the specific weight of belt material is 0.04 lb./cu-in.",
+    "options": [
+      "5.0 in.",
+      "2.0 in.",
+      "1.5 in.",
+      "7.0 in.",
+      "3.0 in.",
+      "4.5 in.",
+      "4.0 in.",
+      "3.5 in.",
+      "2.5 in.",
+      "6.0 in."
+    ],
+    "answer_index": 7
+  },
+  {
+    "id": "50",
+    "category": "engineering",
+    "question": "Air at an initial pressure and temperature of 1 bar and 17\u00b0C respectively is contained inside a cylinder. The air is then compressedpolytropically, along a path for which n = 1.30, until the final pressure inside the cylinder is 5 bars. What is the heat transferred per kg of air for this process?",
+    "options": [
+      "- 31.33 kJ/kg",
+      "62.15 kJ/kg",
+      "-93.45 kJ/kg",
+      "155.67 kJ/kg",
+      "124.78 kJ/kg",
+      "93.45 kJ/kg",
+      "0 kJ/kg (no heat transfer)",
+      "31.33 kJ/kg",
+      "-62.15 kJ/kg",
+      "-124.78 kJ/kg"
+    ],
+    "answer_index": 0
+  },
+  {
+    "id": "51",
+    "category": "engineering",
+    "question": "Find a cosine series which represents f(x) in 0 \\leq x \\leq \\pi if f(x) is defined as f(x) = 00 \\leq x < (\\pi / 2) f(x) = 1(\\pi / 2) < x \\leq \\pi.",
+    "options": [
+      "f(x)= (1 / 2) - (2 / \\pi) \\sum_n=0^\u221e (- 1)^n [{sin(n)} / (2n + 1)]",
+      "f(x)= (1 / 2) - (2 / \\pi) \\sum_n=1^\u221e (- 1)^n [{cos(2n)} / (2n + 1)]",
+      "f(x)= (1 / 2) - (2 / \\pi) \\infty \\sum_n=0 (- 1)^n [{sin(2n + 1)} / (2n + 1)]",
+      "f(x)= (1 / 2) - (1 / \\pi) \\sum_n=0^\u221e (- 1)^n [{cos(n)} / n]",
+      "f(x)= (1 / 2) - (2 / \\pi) \\infty \\sum_n=0 (- 1)^n [{tan(2n + 1)} / (2n + 1)]",
+      "f(x)= (1 / 2) - (2 / \\pi) \\infty \\sum_n=0 (- 1)^n [{cos(2n + 1)} / (2n + 1)]",
+      "f(x)= (1 / 2) + (2 / \\pi) \\sum_n=1^\u221e (- 1)^n [{cos(2n)} / (2n)]",
+      "f(x)= (1 / 2) - (2 / \\pi) \\sum_n=0^\u221e [{cos(2n + 1)} / (2n)]",
+      "f(x)= (1 / 2) - (4 / \\pi) \\sum_n=0^\u221e (- 1)^n [{sin(2n)} / (2n + 1)]",
+      "f(x)= (1 / 2) - (2 / \\pi) \\infty \\sum_n=0 (- 1)^n [{cos(2n + 1)} / (2n + 2)]"
+    ],
+    "answer_index": 5
+  },
+  {
+    "id": "52",
+    "category": "engineering",
+    "question": "In a bridge hand of 13 cards, what is the probability of (a) having neither an ace nor a king, (b) having no ace or one ace and exactly four kings. Assume that the random variables X and Y represent the number of aces and kings respectively. Also assume that (^52 _13) possible bridge hands are equally likely.",
+    "options": [
+      "0.0810, 0.0020",
+      "0.0799, 0.0019",
+      "0.0830, 0.0016",
+      "0.0808, 0.0023",
+      "0.0820, 0.0021",
+      "0.0822, 0.0018",
+      "0.0818, 0.0022",
+      "0.0812, 0.0024",
+      "0.0825, 0.0017",
+      "0.0805, 0.0025"
+    ],
+    "answer_index": 6
+  },
+  {
+    "id": "53",
+    "category": "engineering",
+    "question": "Evaluate f(t) if F(s) = [(3s^2 + 17s + 47) / {(s + 2)(s^2 + 4s + 29)}]",
+    "options": [
+      "f(t) = [e^-2t + 2.24e^-2tsin(5t - 26.6\u00b0)] u(t)",
+      "f(t) = [e^-2t + 2.24e^-2tcos(5t - 26.6\u00b0)] u(t)",
+      "f(t) = [e^-2t - 2.24e^-2tcos(5t - 26.6\u00b0)] u(t)",
+      "f(t) = [e^-2t + 2.24e^-2tcos(5t + 26.6\u00b0)] u(t)"
+    ],
+    "answer_index": 1
+  },
+  {
+    "id": "54",
+    "category": "engineering",
+    "question": "A vertical cylinder 300 mm in diameter is fitted (at the top) witha tight but frictionless piston and is completely filled with waterat 70\u00b0C. The outside of the piston is exposed to an atmosphericpressure of 100kPa. Calculate the minimum forceapplied to the piston which will cause the water to boil.",
+    "options": [
+      "3.12kN",
+      "7.2kN",
+      "5.02kN",
+      "4.00kN",
+      "6.75kN",
+      "1.95kN",
+      "2.86kN",
+      "4.86kN",
+      "5.5kN",
+      "3.98kN"
+    ],
+    "answer_index": 7
+  },
+  {
+    "id": "55",
+    "category": "history",
+    "question": "This question refers to the following information.\nWhile some theorists in the Middle Ages argued that the jihad was a defensive war\u2026 most authorities held that the obligation of jihad did not lapse until all the world was brought under the sway of Islam. The Bahr [al-Fava'id, or \"Sea of Precious Virtues,\" written in the 1150s or 1160s] insists that the first duty of a Muslim ruler is to prosecute the jihad and bring about the victory of Islam, and if he does not do so and he makes peace with the infidel, that ruler would be better dead than alive, for he would be corrupting the world.\nRobert Irwin, \"Islam and the Crusades,\" 1995\nIt is strange how the Christians round Mount Lebanon, when they see any Muslim hermits, bring them food and treat them kindly, saying that these men are dedicated to the Great and Glorious God and that they should therefore share with them. Likewise, not one Christian merchant was stopped or hindered in Muslim territories.\nIbn Jubayr, Muslim scholar, traveling to Mecca and Jerusalem, ca. 1185\nThe first passage tends to support which of the following traditional historical assumptions?",
+    "options": [
+      "That most Muslims during the crusading era were driven by economic gain rather than religious fervor",
+      "That Muslims during the crusading era were primarily focused on peaceful co-existence with Christians",
+      "That the majority of Muslims during the crusading era were more interested in scholarly pursuits than warfare",
+      "That the majority of Muslims were more peaceful than Christians during the crusading era",
+      "That many Muslims during the crusading era were driven by Islamic faith to be inherently violent",
+      "That most Muslims were interested only in protecting their own territory during the crusading era",
+      "That the ideology of holy war was taken seriously by Muslim elites during the crusading era",
+      "That the ideology of holy war was dismissed by Muslim elites during the crusading era",
+      "That the majority of Muslims were indifferent towards the ideology of holy war during the crusading era",
+      "That most Muslims were interested in converting Christians to Islam during the crusading era"
+    ],
+    "answer_index": 6
+  },
+  {
+    "id": "56",
+    "category": "history",
+    "question": "This question refers to the following information.\nRead the list of complaints below.\nArticle 3: Frenchmen should regard as laws of the kingdom those alone which have been prepared by the national assembly and sanctioned by the king.\nArticle 11: Personal liberty, proprietary rights and the security of citizens shall be established in a clear, precise and irrevocable manner. All lettres de cachet shall be abolished forever, subject to certain modifications which the States General may see fit to impose.\nArticle 12: And to remove forever the possibility of injury to the personal and proprietary rights of Frenchmen, the jury system shall be introduced in all criminal cases, and in civil cases for the determination of fact, in all the courts of the realm.\nArticle 17: All distinctions in penalties shall be abolished; and crimes committed by citizens of the different orders shall be punished irrespectively, according to the same forms of law and in the same manner. The States General shall seek to bring it about that the effects of transgression shall be confined to the individual and shall not be reflected upon the relatives of the transgressor, themselves innocent of all participation.\nArticle 21: No tax shall be legal unless accepted by the representatives of the people and sanctioned by the king.\n\u2014Cahiers of the Third Estate of Versailles, 1789\nDuring the radical phase of the revolution, which of the following changes instituted by Robespierre was LEAST beneficial to the defense of France?",
+    "options": [
+      "Encouraging the spread of revolutionary ideas abroad",
+      "Implementing the Reign of Terror",
+      "Expelling foreign diplomats",
+      "Pursuing a policy of de-Christianization",
+      "Fixing prices and wages",
+      "Abolishing slavery in French colonies",
+      "Promoting soldiers based upon their merits in the field",
+      "Enforcing strict rationing of food supplies",
+      "Instituting a new Republican Calendar",
+      "The conscription of huge armies"
+    ],
+    "answer_index": 3
+  },
+  {
+    "id": "57",
+    "category": "law",
+    "question": "In which of the following situations would the actions of the defendant(s) constitute a burglary?",
+    "options": [
+      "A defendant, having lost his keys, broke a window to enter his own house.",
+      "A defendant, seeking shelter from a severe snowstorm, broke into a house. When he awoke the next morning, the defendant noticed a transistor radio, which he put into his pocket before fleeing the house.",
+      "A defendant broke into a museum at night, not to steal, but to add his own artwork to the exhibition.",
+      "A defendant, in an attempt to retrieve a ball that had accidentally been thrown into a neighbor's yard, climbed over the fence and entered the yard.",
+      "A defendant was walking past a home when he saw the homeowner sitting in a chair near the window. Angered at the homeowner for stealing his former girlfriend, the defendant picked up a large brick that was lying nearby and hurled it through the window, intending to kill the homeowner.",
+      "A defendant, under the influence of alcohol, mistakenly entered the wrong house believing it was his own and fell asleep on the couch."
+    ],
+    "answer_index": 4
+  },
+  {
+    "id": "58",
+    "category": "law",
+    "question": "A young lawyer worked late at her office one night. When she finally decided to go home, she headed to the elevator, got in, and pushed the button for the ground floor. The elevator went all the way to the ground floor, but then just stopped there. The doors did not open. The lawyer tried pushing each of the buttons in the elevator and tried to use the intercom in the elevator to call for help, but nothing on the elevator's control panel seemed to be functioning. The lawyer was afraid that she would be stuck in the elevator all night. She began pounding on the doors and yelling. She started to feel panicked, hyperventilated, lost consciousness, and fell to the floor of the elevator. As she fell, she struck her head on the elevator wall, causing a large bump and bruise on her head. She was unconscious in the elevator for about 30 minutes before a security guard tried to use the elevator and realized it wasn't working. The guard managed to force the doors open and found the lawyer. At that moment, the lawyer regained consciousness. An investigation revealed that the elevator stopped working because it had not been properly maintained. The owner of the building had canceled all service and maintenance work on the elevator in order to save money. If the lawyer sues the building owner for false imprisonment, she will most likely",
+    "options": [
+      "prevail, because she was confined in the elevator for an unreasonably long period of time.",
+      "prevail, because she was injured during her confinement in the elevator.",
+      "not prevail, because the building owner did not intentionally cause the lawyer to be confined.",
+      "not prevail, because the lawyer was unconscious and unaware of what was happening for most of the confinement period."
+    ],
+    "answer_index": 2
+  },
+  {
+    "id": "59",
+    "category": "law",
+    "question": "A brother and a sister purchased land under a deed that conveyed title to them as joint tenants with right ofsurvivorship. Common law joint tenancy is unmodified by statute in the jurisdiction. The purchase price was $50,000, of which the sister paid $10,000 and the brother paid $40,000. The sisterlater mortgaged her interest in the land. The brother then died testate, leaving his entire estate to a cousin. Thesister later paid off her mortgage debt, and the mortgage was released. At the present time, who owns the land?",
+    "options": [
+      "Title is entirely in the cousin as the beneficiary of the brother's will.",
+      "The answer depends on whether the jurisdiction follows the lien theory or the title theory ofmortgages.",
+      "The brother's share of the land is in probate, while the sister retains her original share.",
+      "Title is in the sister, the cousin, and the mortgage lender as tenants in common.",
+      "Title is in the sister and the cousin as tenants in common, with the sister having a 40% interest and the cousin having a 60% interest.",
+      "Title is in the sister and the cousin as equal tenants in common.",
+      "Title is in the sister and the cousin as joint tenants with right of survivorship.",
+      "Title is in the sister as she has paid off her mortgage debt.",
+      "Title is in the sister and the cousin as tenants in common, with the sister having a 20% interest and thecousin having an 80% interest."
+    ],
+    "answer_index": 1
+  },
+  {
+    "id": "60",
+    "category": "law",
+    "question": "A gardener sued a homeowner for breach of contract. The gardener claims that the homeowner hired him to perform landscape work at his home. After performing the gardening services, the homeowner paid him $100. The gardener, who speaks only English, contends that the homeowner, who speaks only Japanese, originally agreed to pay him $200 for the work. When the parties entered into their agreement, the gardener was accompanied by his friend, who is now deceased, who spoke both English and Japanese. This jurisdiction has a typical Dead Man's Statute in effect. At trial, the gardener now seeks to testify to the terms of his agreement with the homeowner as communicated to him by his friend. Upon objection by the homeowner's attorney, the gardener's proposed testimony is",
+    "options": [
+      "inadmissible, as it is hearsay and not an exception under the Dead Man's Statute.",
+      "inadmissible, because the gardener did not have a translator present during the agreement.",
+      "admissible, as it is relevant to the case and not excluded by the Dead Man's Statute.",
+      "admissible as non-hearsay to corroborate evidence of a verbal act.",
+      "inadmissible, because the friend was not an official translator.",
+      "admissible, because it is a statement of a deceased person.",
+      "admissible as an admission by a party-opponent.",
+      "inadmissible, unless it is established that the gardener accepted the friend as the homeowner's agent in communicating the terms of the contract.",
+      "admissible, as it is a statement made during the course of employment."
+    ],
+    "answer_index": 7
+  },
+  {
+    "id": "61",
+    "category": "law",
+    "question": "A homeowner was injured when an automatic cutoff switch failed to function on a snowblower he was using. The cutoff switch had functioned well for a year after he purchased the snowblower but failed after the machine had been improperly repaired by a mechanic. The snowblower's operating manual contained a clear and prominent warning against making the very alteration to the switch mechanism that was made by the mechanic. The mechanic, however, did not have a manual available when he repaired the snowblower. Does the homeowner have a viable claim against the manufacturer of the snowblower for damages?",
+    "options": [
+      "Yes, because the manufacturer should have made the manual available to repair personnel.",
+      "Yes, because the snowblower should have had a backup safety system in place.",
+      "No, because the injury resulted from a substantial alteration of the snowblower by a third party. a third party.",
+      "No, because the mechanic is solely responsible for the improper repair.",
+      "No, because the homeowner was contributorily negligent in failing to furnish the snowblower's manual to the mechanic.",
+      "No, because the homeowner should have ensured the mechanic had access to the correct manual.",
+      "Yes, because a defect in the snowblower caused the homeowner's injury.",
+      "Yes, because the cutoff switch should not have failed regardless of the repair.",
+      "Yes, because the manufacturer should have made the switch mechanism more robust.",
+      "No, because the homeowner should have requested a professional repair from the manufacturer."
+    ],
+    "answer_index": 2
+  },
+  {
+    "id": "62",
+    "category": "law",
+    "question": "A college student and a man got into a fight at a bar while playing pooi. The college student allegedly started the fight when he struck the man in the head with a pool cue after the man sank a game-winning shot. At the college student's trial for assault, the prosecution called one of the college student's classmates to testify. The classmate was not at the bar during the fight. The classmate offered to testify that the next day at class, he approached the college student and said, \"It was wrong of you to start a fight with the man over a game of pool,\" at which point, the college student bowed his head and walked away. The classmate's testimony is",
+    "options": [
+      "admissible as a statement of the declarant\u2019s then-existing state of mind.",
+      "inadmissible as a character evidence.",
+      "inadmissible as hearsay not within any recognized exception.",
+      "admissible as a prior consistent statement.",
+      "inadmissible as a statement that is not in the defendant's favor.",
+      "inadmissible because the classmate was not an eyewitness to the fight.",
+      "inadmissible as self-serving.",
+      "admissible as part of the res gestae.",
+      "admissible as an admission.",
+      "admissible as a statement of personal or family history."
+    ],
+    "answer_index": 8
+  },
+  {
+    "id": "63",
+    "category": "law",
+    "question": "A landlord leased a commercial building to a tenant for five years. Rent was payable on the first day of each month, and the landlord retained the right to terminate the lease if the tenant defaulted. The lease term ended 18 months ago. However, the tenant has stayed in possession of the building and has continued to pay the rent on time. The landlord has continued to accept the rent. The fair rental value of the building is now substantially more than what the tenant has been paying, and the landlord recently found a third party who will pay the higher rent. When the tenant paid the rent six weeks ago, the landlord accepted paid the rent six weeks ago, the landlord accepted the rent but told the tenant in writing that she had to vacate at the end of the month. The tenant, who is still in possession of the building, has informed the landlord that she does not want to move and is willing to pay the current fair rental value. The landlord has asked his lawyer for advice regarding the right to possession. Who should the lawyer say is entitled to possession?",
+    "options": [
+      "The tenant, because she has not violated any terms of the original lease.",
+      "The tenant, because she has stated that she is willing to pay the current fair rental value.",
+      "The tenant, because she has been making regular payments and is still in possession of the building.",
+      "The tenant, because she has the right to remain in the building as long as she continues to pay rent.",
+      "The landlord, because he gave proper notice to terminate the tenancy.",
+      "The landlord, because the lease term ended 18 months ago.",
+      "The landlord, because he has found a third party willing to pay a higher rent.",
+      "The tenant, because the landlord has not shown good cause to terminate the tenancy.",
+      "The landlord, because he retained the right to reenter."
+    ],
+    "answer_index": 4
+  },
+  {
+    "id": "64",
+    "category": "law",
+    "question": "A truck and a car collided at an intersection. Both drivers were injured, and each one filed a lawsuit against the other for negligence. At trial, the jury found each of the drivers liable for negligence. The jury found that the amount of the truck driver's injuries was $10,000, and the amount of the car driver's injuries was $8,000. The jury assigned 50 percent of the fault for the accident to the truck driver and 50 percent of the fault to the car driver. Assume that the jurisdiction has a statute in effect that provides: \"Contributory negligence shall not bar recovery in an action to recover damages for negligence resulting in injury to person or property if such negligence was not as great as the negligence of the person from whom recovery is sought. Any damages allowed shall be diminished in proportion to the amount of negligence attributable to the person who is seeking recovery. \"Which of the following is the appropriate judgment in the case?",
+    "options": [
+      "The truck driver recovers $4,000, and the car driver recovers $2,000.",
+      "The truck driver recovers $2,000, and the car driver recovers $6,000.",
+      "The truck driver recovers $1,000, and the car driver recovers nothing.",
+      "The truck driver recovers nothing, and the car driver recovers $4,000.",
+      "The car driver recovers $5,000, and the truck driver recovers $5,000.",
+      "The truck driver recovers $5,000, and the car driver recovers $4,000.",
+      "The truck driver recovers $6,000, and the car driver recovers $2,000.",
+      "Neither party recovers anything from the other.",
+      "The truck driver recovers $10,000, and the car driver recovers $8,000.",
+      "The truck driver recovers $8,000, and the car driver recovers $10,000."
+    ],
+    "answer_index": 7
+  },
+  {
+    "id": "65",
+    "category": "law",
+    "question": "Which of the following executive orders will most likely be found unconstitutional?",
+    "options": [
+      "The President issued an executive order instructing all executive branch employees to refrain from using social media during working hours.",
+      "The President issued an executive order banning all forms of meat consumption within the premises of the executive building, citing health reasons and environmental concerns.",
+      "The President issued an executive order abolishing a federal agency that was established by an Act of Congress, citing redundancy and inefficiency.",
+      "In 1887, Congress passed a law establishing a federal Commission of Birdwatchers. The Commission, which is still in effect, consists of seven members who are appointed by the President. The Commission's main function is to go on periodic retreats to photograph and study North American birds and their migratory habits. Believing that the Commission is archaic, the President decides that any future funding will simply be a waste of money. He thus executes an executive decree abrogating the Commission of Birdwatchers.",
+      "Without seeking the advice and consent of the Senate, the President issued an executive order to establish a new federal agency to oversee the operations of all other federal agencies.",
+      "The President issued an executive order requiring all executive branch employees to use exclusively one brand of ballpoint pens and pencils as their writing utensils. According to a study, the federal government could save in excess of $250,000 a year in office supply costs if all executive agencies were to use standardized pens and pencils.",
+      "The President issued an executive order declaring a state of emergency in a city dealing with civil unrest, and authorizes the use of military force without the approval of Congress.",
+      "The President issued an executive order mandating all executive branch employees to take a mandatory vacation for a period of one month.",
+      "The President issued an executive order requiring all executive branch employees to wear only white shirts and blouses during regular working hours. According to the President's directive, executive employees are prohibited from wearing colored (e. g. , blue or yellow) or striped shirts and blouses while on duty. The President issued the order in an effort to establish a uniform dress code for all executive employees.",
+      "A devastating hurricane damages an island which is part of a foreign country. The storm destroys many homes, resulting in death and injury to thousands. In response to a request from the foreign government for emergency aid, the President, without seeking the advice and consent of the Senate, issues an executive decree authorizing U. S. Army troops to the island to provide medical and humanitarian assistance."
+    ],
+    "answer_index": 3
+  },
+  {
+    "id": "66",
+    "category": "law",
+    "question": "A professional football player was seriously injured when the football helmet he was wearing shattered as he was being tackled during a game. The player subsequently asserted a claim against the manufacturer of the helmet to recover damages for his injury. At trial, the player's attorney calls a former employee of the manufacturer to testify that three weeks after the player suffered his injury, the manufacturer devised a new design for its football helmets. The former employee's testimony is",
+    "options": [
+      "inadmissible, because the former employee is no longer authorized to speak on behalf of the manufacturer.",
+      "admissible as an admission.",
+      "inadmissible, because of the public policy behind taking safety precautions.",
+      "admissible as evidence that the manufacturer knew the helmet was defective.",
+      "admissible, because the former employee has firsthand knowledge of the manufacturer's actions.",
+      "inadmissible, because the testimony is prejudicial to the manufacturer.",
+      "admissible as direct evidence that the player's injury was caused by the defective design of the football helmet.",
+      "inadmissible, because the testimony is hearsay.",
+      "inadmissible, because the testimony is irrelevant to the case.",
+      "admissible as circumstantial evidence that the player's injury was traceable to the defective design of the football helmet."
+    ],
+    "answer_index": 2
+  },
+  {
+    "id": "67",
+    "category": "law",
+    "question": "A woman is the fee simple owner of a 1,000-acre tract of land. Half of the tract is swampland totally unfit for cultivation, though it is heavily covered with valuable hardwood timber. The other half is also covered with valuable timber, but it would be land fit for the raising of crops if it were cleared of the timber. The latter section of land is more valuable for cultivation than it is for the growing of timber and has clearings where someone could build a home and live. The woman conveyed the tract to her brother for life. At the time of the conveyance, the swampland had never been used for the production of timber. The brother took possession and cleared 40 acres of the timber on the section that was suitable for cultivation. In addition, the brother cut 60 acres of timber in the swampland, thus becoming the first person to exploit this area. The brother then proceeded to clear some timber on the tract and used it in repairing fences, buildings, equipment, and the like on the property. In an action by the woman to permanently enjoin the brother from cutting any more timber on the swampland section of the tract and to account for profits received in the sale of the timber, the woman will most likely",
+    "options": [
+      "succeed, because a life tenant may not exploit natural resources where no such prior use had been made.",
+      "not succeed, because a life tenant has a right to make reasonable use of the land.",
+      "succeed, because the life tenant has not obtained explicit permission to cut timber.",
+      "succeed, because a life tenant may not clear timber from swampland.",
+      "not succeed, because the life tenant is allowed to make necessary repairs on the property.",
+      "not succeed, because a life tenant is not liable for permissive waste.",
+      "not succeed, because a life tenant is allowed to exploit natural resources for personal use.",
+      "not succeed, because a life tenant has the right to clear land for cultivation.",
+      "succeed, because a life tenant may not make changes that alter the value of the land.",
+      "succeed, because a life tenant must account for permissive waste to the reversioner or remainderman."
+    ],
+    "answer_index": 0
+  },
+  {
+    "id": "68",
+    "category": "law",
+    "question": "A defendant and his college roommate went home together for the holiday vacation. The defendant was to go back to college by himself. The day that the defendant was to drive back to college, his roommate asked him if he would deliver a package to one of their classmates. The defendant agreed, and the roommate gave him a small package, which the defendant placed in his glove compartment. While driving back to school, the defendant was stopped for speeding. When the state trooper asked the defendant for his license and registration, he reached into the glove compartment. As he did, the package that his roommate had given him fell onto the floor. When it hit the floor, the box broke open and a plastic envelope containing a white substance slid out. Seeing that the substance appeared to be cocaine, the state trooper arrested the defendant for possession of illegal narcotics under a state statute making it a felony to willfully possess a controlled substance. The package did, in fact, contain cocaine. If the defendant is later brought to trial for this charge, his best defense is that",
+    "options": [
+      "the package didn't belong to him.",
+      "the cocaine was illegally seized.",
+      "the trooper didn't have a search warrant.",
+      "the defendant didn't know what was in the package.",
+      "the roommate didn't tell him he was carrying illegal narcotics.",
+      "the roommate should be the one charged, not him.",
+      "the substance was not tested to confirm it was cocaine.",
+      "the defendant didn't willingly possess the substance.",
+      "the cocaine was not in a recognizable form.",
+      "the defendant was not speeding."
+    ],
+    "answer_index": 3
+  },
+  {
+    "id": "69",
+    "category": "law",
+    "question": "A man was at a party where he observed a female guest who had passed out and was unconscious and alone in a bedroom of the house. The man locked the door and quietly took the female's purse, emptied all of the money into his pockets, and removed the jewelry from her person. He was apprehended and charged with robbery. Can he be convicted of that crime?",
+    "options": [
+      "Yes, the act of taking someone's belongings without their consent while they are unconscious is considered robbery.",
+      "Yes, robbery does not require that the victim be subdued by force or be placed in fear.",
+      "No, this was not robbery because the victim was not aware of the crime when it occurred.",
+      "Yes, robbery is the unlawful taking of property from another's person by intimidation or force.",
+      "No, this was not robbery because there was no intimidation, and indeed no force, against an unconscious victim.",
+      "No, this was not robbery because the man was a guest at the party.",
+      "Yes, robbery can occur in any location, including a private home.",
+      "No, this was not robbery because it occurred in a private home and not in a business establishment or on the street.",
+      "No, this was not robbery because the man didn't use a weapon."
+    ],
+    "answer_index": 4
+  },
+  {
+    "id": "70",
+    "category": "law",
+    "question": "George was charged with the murder of a well- known criminal. The victim was found shot to death in his car. The only witness to the shooting was the victim's pet parrot, which was found hovering over the victim's body repeating over and over, \"George don't. . . George don't. \"To prove the identity of the victim's killer, the prosecution has a witness testify that about the time of the murder, he was in the area and heard the victim's parrot calling George's name. The best objection to the testimony is that it is",
+    "options": [
+      "leading the witness.",
+      "privileged communication.",
+      "speculative.",
+      "opinion testimony.",
+      "character evidence.",
+      "irrelevant.",
+      "an assertion by the witness.",
+      "self-serving.",
+      "circumstantial evidence."
+    ],
+    "answer_index": 5
+  },
+  {
+    "id": "71",
+    "category": "law",
+    "question": "A man entered into a franchise contract with a company to operate a fast-food restaurant in a city. The company's national headquarters is located in another state. After the contract was executed, the man leased a store in a shopping center where he planned to open his restaurant. City public officials, however, refused to grant the man the necessary food vendor's license despite the fact that he could prove that his restaurant complied with all provisions of the municipal licensing ordinance. Section 1287 of the city food vending ordinance provides, in part, that \"a food vendor's license shall be issued to any applicant who properly complies with all of the health requirements of this ordinance. \" After the man's application for a food vendor's license was rejected, he requested a hearing to establish his qualifications. City officials refused this request and also declined to give any reason for his license denial. Which of the following is the strongest constitutional argument that the man may use to challenge the refusal of the city officials to grant him a food vendor's license?",
+    "options": [
+      "The city action infringes on his right to property without just compensation.",
+      "The city action is a violation of his First Amendment rights.",
+      "The city action is a breach of his Fourth Amendment rights.",
+      "The city action denies him the right to work under the Thirteenth Amendment.",
+      "The city action violates his right to fair trial.",
+      "The city action constitutes an undue burden on the potential interstate commerce between the man and his out-of-state franchisor.",
+      "The city action denies him procedural due process.",
+      "The city action is an infringement on his right to equal protection under the law.",
+      "The city action impairs the obligation of the man's contract with the franchising company and his rental agreement with the shopping mall.",
+      "The city action denies him substantive due process by arbitrarily regulating economic activity."
+    ],
+    "answer_index": 6
+  },
+  {
+    "id": "72",
+    "category": "law",
+    "question": "Third-year student is studying contracts. He has learned that generally all contractual rights may be assigned, but there are some exceptions. Which of the following is not an exception?",
+    "options": [
+      "An assignment that substantially changes obligor's duty or risk.",
+      "An assignment that changes the nature of the contract.",
+      "An assignment that continues the obligor's duty or risk.",
+      "An assignment that transfers rights to an incapable party.",
+      "An assignment that causes undue hardship or loss to the obligor.",
+      "An assignment that reduces the value of the contract to the obligor.",
+      "An assignment of future rights from future contracts.",
+      "An assignment that is made without the consent of the other party.",
+      "An assignment not allowed by law."
+    ],
+    "answer_index": 2
+  },
+  {
+    "id": "73",
+    "category": "law",
+    "question": "A rancher owned a 2,000-acre cattle ranch in a remote section of the state. For some time the rancher's cattle had been seized upon by roaming packs of wolves. In order to protect his livestock from these attacks, the rancher erected a fence around his property. In addition, the rancher installed electrical wiring on the fence. The wiring transmitted an electric current, which would emit a shock upon contact with the fence. Although the voltage was calculated to frighten animals away from the fence, it was of such low intensity that it posed no risk of injury to a human being, even a small child. Consequently, the rancher did not post any notice of the electrical wiring device. One day, a cowboy was riding his horse along the outskirts of the rancher's property, when a gust of wind blew his hat onto the fence. The cowboy, who had undergone major heart surgery, wore a pacemaker. When the cowboy touched the top of the fence to retrieve his hat, the electric current short- circuited his pacemaker, resulting in the cowboy's death by electrocution. In a wrongful death action by the cowboy's estate against the rancher, the installation of the electrical wiring device would most likely constitute",
+    "options": [
+      "the legal cause of the cowboy's death, but not the cause-in-fact.",
+      "both the cause-in-fact and a reckless act resulting in the cowboy's death.",
+      "a negligent act resulting in the cowboy's death, but not the cause-in-fact.",
+      "a reckless disregard for the safety of others, resulting in the cowboy's death.",
+      "both an unforeseeable event and the legal cause of the cowboy's death.",
+      "the cause-in-fact of the cowboy's death, but not the legal cause.",
+      "an intentional act causing the cowboy's death, but not the cause-in-fact.",
+      "an unforeseeable event leading to the cowboy's death, but not the legal cause.",
+      "the legal cause and the cause-in-fact of the cowboy's death.",
+      "neither the legal cause nor the cause-in-fact of the cowboy's death."
+    ],
+    "answer_index": 5
+  },
+  {
+    "id": "74",
+    "category": "law",
+    "question": "A teenager is the star player on his high school basketball team. The high school is a public school, and the school has a policy that all student athletes are required to sign an authorization form by which they consent to undergo random drug testing. All the basketball players on the school team, except the teenager, signed the authorization. In the third game of the season, the team beat their archrival, and the teenager scored a record high 69 points. In the locker room following the game, the basketball coach approached the teenager and requested that he provide a urine sample for a random drug test. The teenager refused. He had smoked some marijuana the previous day and was afraid that a positive test result might jeopardize his being awarded a basketball scholarship to college. Thereafter, the teenager was suspended from the team for failing to comply with the coach's request. The coach later admitted that he did not have any individualized suspicion that the teenager was under the influence of drugs. The teenager has filed a motion challenging the suspension and seeking reinstatement on the basketball team. The court will most likely rule in favor of",
+    "options": [
+      "the school, because drug testing is not an intrusion on his Fourth Amendment right of privacy.",
+      "the school, because the student is a public figure and therefore has less expectation of privacy.",
+      "the student, because the coach admitted that he did not have any individualized suspicion that the student was under the influence of drugs.",
+      "the school, because the student's drug use is a risk to his health and the safety of others.",
+      "the school, because a urine sample does not constitute a search under the Fourth Amendment.",
+      "the student, because the school's policy of random drug testing is not enforceable.",
+      "the student, because the school's policy of random drug testing is a violation of his civil rights.",
+      "the student, because the school did not have a legitimate reason to suspect him of drug use.",
+      "the student, because he didn't consent to the drug test."
+    ],
+    "answer_index": 0
+  },
+  {
+    "id": "75",
+    "category": "law",
+    "question": "A plaintiff sued a defendant for injuries that the plaintiff suffered when he was struck by the defendant's car. At trial, the plaintiff testified that he was walking across the street inside a crosswalk at the time the defendant's car hit him. This action takes place in a jurisdiction that has a statute in effect requiring all motorists to stop and permit pedestrians to cross streets at designated crosswalks. The defendant contended that the plaintiff ran into the street outside the crosswalk. Furthermore, the defendant testified that he immediately applied his brakes when he saw the plaintiff dart into the street, but couldn't stop his car in time to avoid hitting him. In support of the defendant's testimony, the defendant calls a neighbor to testify that she has observed the plaintiff frequently during the years that she has lived on that street, and that the plaintiff \"always crosses the street outside the crosswalk. \"The neighbor's testimony is likely to be",
+    "options": [
+      "admitted, because it tends to show that the plaintiff was careless.",
+      "excluded, because it is based on the neighbor's personal opinion.",
+      "admitted, because it supports the defendant's version of events.",
+      "excluded, because her testimony is impermissible evidence of character to show defendant's plaintiff's conduct on a particular occasion.",
+      "admitted, because it challenges the plaintiff's credibility.",
+      "excluded, because the neighbor's testimony is hearsay.",
+      "admitted, because it is probative of the plaintiff's habit of crossing the street outside the crosswalk.",
+      "excluded, because it is irrelevant to the specific incident.",
+      "admitted, because it provides context to the plaintiff's behavior."
+    ],
+    "answer_index": 6
+  },
+  {
+    "id": "76",
+    "category": "math",
+    "question": "What is the product of 32 x 67?",
+    "options": [
+      "2,344",
+      "2,164",
+      "2,054",
+      "1,824",
+      "2,244",
+      "1,934",
+      "2,144",
+      "2,044"
+    ],
+    "answer_index": 6
+  },
+  {
+    "id": "77",
+    "category": "math",
+    "question": "Let (x_n) be a sequence defined by x_1 = 2 and x_{n+1} = 1 + 1/(1 + x_n). If (x_n) converges, what must its limit be in decimals?",
+    "options": [
+      "2.718",
+      "1.414",
+      "3.000",
+      "2.235",
+      "3.141",
+      "1.618",
+      "1.732",
+      "0.618",
+      "1.000",
+      "2.000"
+    ],
+    "answer_index": 1
+  },
+  {
+    "id": "78",
+    "category": "math",
+    "question": "Katie is going on vacation for 3 weeks. She finds the number of days of work she will miss by multiplying 5 \u00d7 3. Which expression shows another way Katie can find the number of days of work she will miss?",
+    "options": [
+      "5+3+3",
+      "3+3+3",
+      "5\u00d75",
+      "5\u00d73\u00d73",
+      "5\u00d72\u00d73",
+      "5+5+5+5+5",
+      "5+5+5",
+      "3\u00d74+5",
+      "3+5",
+      "3\u00d73\u00d73"
+    ],
+    "answer_index": 6
+  },
+  {
+    "id": "79",
+    "category": "math",
+    "question": "As reported on CNN, in a May 1999 national poll 43% of high school students expressed fear about going to school. Which of the following best describes what is meant by the poll having a margin of error of 5%?",
+    "options": [
+      "There is a 0.05 probability that the 43% result is in error.",
+      "The pollsters are 95% confident that the true proportion is between 38% and 48%.",
+      "Five percent of the students refused to participate in the poll.",
+      "The poll's results could be 5% higher or lower due to random chance.",
+      "Five percent of the students surveyed did not understand the question.",
+      "There is a 5% chance that the results of the poll are completely inaccurate.",
+      "Only 5% of the students surveyed gave valid responses.",
+      "It is likely that the true proportion of high school students afraid to go to school is between 38% and 48%.",
+      "The poll's results are 5% away from the true proportion.",
+      "Between 38% and 48% of those surveyed expressed fear about going to school."
+    ],
+    "answer_index": 1
+  },
+  {
+    "id": "80",
+    "category": "math",
+    "question": "Joe and Mike both ran the samerace. Joe finished the race 4 minutes before Mike. If Mike finished the race at 4:02 p.m., what time did Joe finish the race?",
+    "options": [
+      "3:52 p.m.",
+      "3:54 p.m.",
+      "4:08 p.m.",
+      "8:02 p.m.",
+      "3:58 p.m.",
+      "4:00 p.m.",
+      "4:06 p.m.",
+      "4:04 p.m.",
+      "12:02 p.m.",
+      "3:56 p.m."
+    ],
+    "answer_index": 4
+  },
+  {
+    "id": "81",
+    "category": "math",
+    "question": "A company makes 5 blue cars for every 3 white cars it makes. If the company makes 15 white cars in one day, how many blue cars will it make?",
+    "options": [
+      "25",
+      "35",
+      "17",
+      "13",
+      "9",
+      "18",
+      "22",
+      "20",
+      "40",
+      "30"
+    ],
+    "answer_index": 0
+  },
+  {
+    "id": "82",
+    "category": "math",
+    "question": "Water drips out of a hole at the vertex of an upside down cone at a rate of 3 cm^3 per minute. The\ncone\u2019s height and radius are 2 cm and 1 cm, respectively. At what rate does the height of the water change\nwhen the water level is half a centimeter below the top of the cone? The volume of a cone is V = (\u03c0/3)*r^2*h,\nwhere r is the radius and h is the height of the cone.",
+    "options": [
+      "\u221228/(3\u03c0) cm/min",
+      "\u22128/(3\u03c0) cm/min",
+      "\u221224/(3\u03c0) cm/min",
+      "\u221248/\u03c0 cm/min",
+      "\u221212/(3\u03c0) cm/min",
+      "\u22124/(3\u03c0) cm/min",
+      "\u221232/(3\u03c0) cm/min",
+      "\u221220/(3\u03c0) cm/min",
+      "\u221240/(3\u03c0) cm/min",
+      "\u221216/(3\u03c0) cm/min"
+    ],
+    "answer_index": 9
+  },
+  {
+    "id": "83",
+    "category": "math",
+    "question": "Let $I(R)=\\iint_{x^2+y^2 \\leq R^2}(\\frac{1+2 x^2}{1+x^4+6x^2y^2+y^4}-\\frac{1+y^2}{2+x^4+y^4}) dx dy$. What is the limit of $I(R)$ as $R$ goes to infinity?",
+    "options": [
+      "5.123456",
+      "2.453232",
+      "0.999999",
+      "4.669201",
+      "2.718281",
+      "3.141593",
+      "1.53978589",
+      "3.567839",
+      "0",
+      "-1.234567"
+    ],
+    "answer_index": 6
+  },
+  {
+    "id": "84",
+    "category": "math",
+    "question": "Find the number that makes the statement true: 26.1 mm = _ dm.",
+    "options": [
+      "0.000261",
+      "0.0261",
+      "0.00261",
+      "0.261",
+      "261",
+      "26.1",
+      "26,100",
+      "2610",
+      "2.61",
+      "2,610"
+    ],
+    "answer_index": 3
+  },
+  {
+    "id": "85",
+    "category": "math",
+    "question": "The probability that a point (x, y) in R^2 is chosen follows a uniform random distribution within the region described by the inequality 0 < |x| + |y| < 1 . What is the probability that 2(x + y) > 1?",
+    "options": [
+      "1/3",
+      "sqrt(2)/8",
+      "2/3",
+      "1/sqrt(2)",
+      "3/4",
+      "sqrt(2)/4",
+      "1/2",
+      "1/8",
+      "1/4",
+      "0"
+    ],
+    "answer_index": 8
+  },
+  {
+    "id": "86",
+    "category": "physics",
+    "question": "The first five harmonics produced by an organ pipe open at both ends are 50 Hz, 100 Hz, 150 Hz, 200 Hz, and 250 Hz. Which of the harmonics, if any, will survive once the pipe is closed at one end?",
+    "options": [
+      "All harmonics will survive",
+      "75 Hz, 150 Hz, and 225 Hz only",
+      "100 Hz and 200 Hz only",
+      "50 Hz, 100 Hz, 200 Hz, and 250 Hz",
+      "nan",
+      "150 Hz and 250 Hz only",
+      "50 Hz and 100 Hz only",
+      "No harmonics will survive",
+      "200 Hz only",
+      "50 Hz, 150 Hz, and 250 Hz only"
+    ],
+    "answer_index": 4
+  },
+  {
+    "id": "87",
+    "category": "physics",
+    "question": "At a counting rate of 5 atoms per second, how long would it take to count the atoms in a spherical droplet of water 0.1 take to count the atoms in a spherical droplet of water 0.1 cm in diameter? cm in diameter?",
+    "options": [
+      "9.9 \u00d7 10^22 years",
+      "8.8 \u00d7 10^21 years",
+      "6.6 \u00d7 10^20 years",
+      "2.5 \u00d7 10^18 years",
+      "3.3 \u00d7 10^11 years",
+      "1.05 \u00d7 10^19 years",
+      "1.75 \u00d7 10^19 years",
+      "4.1 \u00d7 10^12 years",
+      "7.5 \u00d7 10^17 years",
+      "5.25 \u00d7 10^19 years"
+    ],
+    "answer_index": 4
+  },
+  {
+    "id": "88",
+    "category": "physics",
+    "question": "A bell circuit consists of 150 feet of No. 18 wire which has a resistance of 1 ohm, a bell which has a resistance of 5 ohms, and a battery of two dry cells, each having an emf of 1.5 volts. What is the current through the circuit, assuming that the resistance of the battery is negligible?",
+    "options": [
+      "0.9 amp",
+      "0.6 amp",
+      "0.2 amp",
+      "0.3 amp",
+      "1 amp",
+      "0.4 amp",
+      "0.5 amp",
+      "2 amps",
+      "1.5 amps",
+      "0.75 amp"
+    ],
+    "answer_index": 6
+  },
+  {
+    "id": "89",
+    "category": "physics",
+    "question": "For the reaction $\\mathrm{C}($ graphite $)+\\mathrm{H}_2 \\mathrm{O}(g) \\rightleftharpoons$ $\\mathrm{CO}(g)+\\mathrm{H}_2(g), \\Delta H_R^{\\circ}=131.28 \\mathrm{~kJ} \\mathrm{~mol}^{-1}$ at $298.15 \\mathrm{~K}$. Use the values of $C_{P, m}^{\\circ}$ at $298.15 \\mathrm{~K}$ in the data tables to calculate $\\Delta H_R^{\\circ}$ at $125.0^{\\circ} \\mathrm{C}$.",
+    "options": [
+      "126.3 kJ mol^{-1}",
+      "128.5 kJ mol^{-1}",
+      "135.0 kJ mol^{-1}",
+      "132.9 $\\mathrm{~kJ} \\mathrm{~mol}^{-1}$",
+      "137.2 kJ mol^{-1}",
+      "133.5 kJ mol^{-1}",
+      "130.0 kJ mol^{-1}",
+      "131.5 $\\mathrm{~kJ} \\mathrm{~mol}^{-1}$",
+      "129.7 $\\mathrm{~kJ} \\mathrm{~mol}^{-1}$",
+      "134.5 $\\mathrm{~kJ} \\mathrm{~mol}^{-1}$"
+    ],
+    "answer_index": 3
+  },
+  {
+    "id": "90",
+    "category": "physics",
+    "question": "Calculate, approximately, the relative intensities of the secondary maxima in the single-slitFraunhoferdiffraction pattern.",
+    "options": [
+      "0.035, 0.014, 0.0070",
+      "0.030, 0.012, 0.0060",
+      "0.045, 0.016, 0.0083",
+      "0.060, 0.025, 0.0125",
+      "0.040, 0.015, 0.0075",
+      "0.050, 0.020, 0.010",
+      "0.045, 0.015, 0.0075",
+      "0.042, 0.017, 0.0085",
+      "0.055, 0.022, 0.0110",
+      "0.050, 0.018, 0.0090"
+    ],
+    "answer_index": 2
+  },
+  {
+    "id": "91",
+    "category": "physics",
+    "question": "Compute the average kinetic energy inelectronvoltsof a gas molecule at room temperature.",
+    "options": [
+      "0.5eV",
+      "1eV",
+      "0.15eV",
+      "0.1eV",
+      "0.025eV",
+      "0.05eV",
+      "0.075eV",
+      "0.038eV",
+      "0.001eV",
+      "0.02eV"
+    ],
+    "answer_index": 7
+  },
+  {
+    "id": "92",
+    "category": "physics",
+    "question": "In a simple telescope, it is given that F, the focal length of the objective, = 24 cm; f, the focal length of the eyepiece, = 4 cm; the aperture of the objective is equal to 2 cm; and the aperture of the eye lens is equal to 1 cm. Find: (a) where the eye (treated as a point) must be placed to see the greatest extent of a distant object; (b) the diameter of the eye ring; (c) the angular size of the largest object which can be seen, given that the eye is treated as a point and is located at the eye point. Solve part (c) using (i) magnifying power, and (ii) without using magnifying power.",
+    "options": [
+      "4 cm, (1 / 2) cm, 1 degree",
+      "4.5 cm, (3 / 4) cm, 1.2 degrees",
+      "3.5 cm, (2 / 3) cm, 2.5 degrees",
+      "6 cm, (2 / 3) cm, 3 degrees",
+      "6 cm, (1 / 2) cm, 4 degrees",
+      "4 cm, 1 cm, 1.5 degrees",
+      "5 cm, (1 / 4) cm, 2.5 degrees",
+      "4.67 cm, (1 / 3) cm, 2.04 degrees",
+      "5 cm, 1 cm, 2 degrees",
+      "5.5 cm, (5 / 6) cm, 3.5 degrees"
+    ],
+    "answer_index": 7
+  },
+  {
+    "id": "93",
+    "category": "physics",
+    "question": "If we project a body upward with speed 1000 cm/s, how high will it rise?",
+    "options": [
+      "470 cm",
+      "480 cm",
+      "510 cm",
+      "600 cm",
+      "530 cm",
+      "550 cm",
+      "450 cm",
+      "560 cm",
+      "540 cm",
+      "500 cm"
+    ],
+    "answer_index": 2
+  },
+  {
+    "id": "94",
+    "category": "physics",
+    "question": "In the 1930s F.T. Bacon designed hydrogen fuel cells with extremely good performance. Using his concepts Pratt and Whitney has constructed hydrogen fuel cells that produce a potential of 0.9 V and generate a current of about 2.3 \u00d7 10^3 A for each square meter of anode area. If a Bacon battery is to deliver 100 W of power, how large must the anode be?",
+    "options": [
+      "3.2 \u00d7 10^1 m",
+      "5.0 \u00d7 10^1 m",
+      "2.2 \u00d7 10^1 m",
+      "7.8 \u00d7 10^1 m",
+      "1.0 \u00d7 10^1 m",
+      "2.8 \u00d7 10^1 m",
+      "4.3 \u00d7 10^1 m",
+      "6.5 \u00d7 10^1 m",
+      "3.6 \u00d7 10^1 m",
+      "1.5 \u00d7 10^1 m"
+    ],
+    "answer_index": 2
+  },
+  {
+    "id": "95",
+    "category": "physics",
+    "question": "What is the resolving power of aFabry-perotinterferometer, in which the mirror separation is 15mm, for a reflecting power of 75%? For a reflecting power of 90%? (Assume \\lambda = 5000 \\AA.)",
+    "options": [
+      "530,350 and 1,459,923",
+      "620,420 and 1,489,934",
+      "560,450 and 1,350,987",
+      "580,500 and 1,600,999",
+      "500,000 and 1,000,000",
+      "550,380 and 1,510,963",
+      "450,300 and 1,250,846",
+      "600,400 and 1,579,946",
+      "540,400 and 1,400,946",
+      "540,400 and 1,479,946"
+    ],
+    "answer_index": 9
+  },
+  {
+    "id": "96",
+    "category": "physics",
+    "question": "A pitcher can throw a baseball weighing 5 ounces so that it will have a velocity of 96 feet per second. What is its kinetic energy?",
+    "options": [
+      "55 ft-lb",
+      "45 ft-lb",
+      "60 ft-lb",
+      "5 ft-lb",
+      "24 ft-lb",
+      "32 ft-lb",
+      "96 ft-lb",
+      "15 ft-lb",
+      "10 ft-lb",
+      "72 ft-lb"
+    ],
+    "answer_index": 1
+  },
+  {
+    "id": "97",
+    "category": "physics",
+    "question": "How do scientists know that the majority of meteorites come from the asteroid belt?",
+    "options": [
+      "The spectra of some meteorites are similar to the spectra of asteroids in the asteroid belt.",
+      "The chemical composition of meteorites is identical to the composition of asteroids from the asteroid belt.",
+      "The size and shape of meteorites match the size and shape of asteroids in the asteroid belt.",
+      "The trajectory of meteorites points back to the asteroid belt.",
+      "The asteroid belt is the only possible source of meteorites therefore they must originate there.",
+      "The density of meteorites is the same as the density of asteroids in the asteroid belt.",
+      "Collisions are common in the asteroid belt and we can track the fragments from their source asteroid to the Earth where they become meteorites.",
+      "Scientists have found inscriptions on meteorites that indicate they originated from the asteroid belt.",
+      "Scientists have observed meteorites being ejected from the asteroid belt."
+    ],
+    "answer_index": 0
+  },
+  {
+    "id": "98",
+    "category": "physics",
+    "question": "The energy of the doubly charged a-particles of mass 6.64 \u00d7 10^-27 kg emitted from The is 6.048MeV. What is their velocity and what magnetic field applied per-pendicular to a collimated beam of such particles would bend the beam into a circle of radius 40 cm?",
+    "options": [
+      "velocity is 1.209 \u00d7 10^7 m/s, magnetic field is 0.885 Wb/m^2",
+      "velocity is 2.209 \u00d7 10^7 m/s, magnetic field is 0.785 Wb/m^2",
+      "velocity is 1.609 \u00d7 10^7 m/s, magnetic field is 1.085 Wb/m^2",
+      "velocity is 1.509 \u00d7 10^7 m/s, magnetic field is 0.985 Wb/m^2",
+      "velocity is 1.809 \u00d7 10^7 m/s, magnetic field is 0.385 Wb/m^2",
+      "velocity is 1.709 \u00d7 10^7 m/s, magnetic field is 1.885 Wb/m^2",
+      "velocity is 1.709 \u00d7 10^7 m/s, magnetic field is 0.885 Wb/m^2",
+      "velocity is 1.309 \u00d7 10^7 m/s, magnetic field is 0.685 Wb/m^2",
+      "velocity is 1.109 \u00d7 10^7 m/s, magnetic field is 0.585 Wb/m^2",
+      "velocity is 1.709 \u00d7 10^7 m/s, magnetic field is 0.485 Wb/m^2"
+    ],
+    "answer_index": 6
+  },
+  {
+    "id": "99",
+    "category": "physics",
+    "question": "A particular type of x-ray equipment discharges a capacitor to obtain its electrical energy. The capacitor of capacitance 0.25\\muFis charged to 100 kV and discharged to 40 kV during a 0.1-s exposure. Calculate the quantity of charge supplied to the x-ray tube, the average current through it, and the energy dissipated.",
+    "options": [
+      "Charge: 0.02 C, Current: 160 mA, Energy: 1150 J",
+      "Charge: 0.015 C, Current: 150 mA, Energy: 1050 J",
+      "Charge: 0.022 C, Current: 220 mA, Energy: 1100 J",
+      "Charge: 0.01 C, Current: 100 mA, Energy: 850 J",
+      "Charge: 0.018 C, Current: 180 mA, Energy: 950 J",
+      "Charge: 0.025 C, Current: 200 mA, Energy: 1250 J",
+      "Charge: 0.008 C, Current: 80 mA, Energy: 800 J",
+      "Charge: 0.012 C, Current: 120 mA, Energy: 900 J",
+      "Charge: 0.03 C, Current: 300 mA, Energy: 1350 J",
+      "Charge: 0.017 C, Current: 170 mA, Energy: 1200 J"
+    ],
+    "answer_index": 1
+  },
+  {
+    "id": "100",
+    "category": "physics",
+    "question": "The refractive powers of the front and back lenses of a Galilean-type telescope are + 10.00dioptersand - 12.50 dioptersrespectively. What must the separation of the two lenses be if the system is to beafocal? What is the angular magnification?",
+    "options": [
+      "2cm, -2",
+      "2.5cm, -1.75",
+      "1cm, -1",
+      "4cm, -2.5",
+      "1cm, -2",
+      "2.5cm, -1",
+      "3cm, -1.5",
+      "2cm, -1.25",
+      "1.5cm, -1.25",
+      "3.5cm, -1"
+    ],
+    "answer_index": 7
+  }
+]

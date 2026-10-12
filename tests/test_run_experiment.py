@@ -51,21 +51,24 @@ class TestModelSlugAndPaths(unittest.TestCase):
     def test_reasoning_tag_max_tokens(self):
         self.assertEqual(rx.reasoning_tag("max_tokens", 4096), "maxtokens4096")
 
-    def test_output_path_uses_reasoning_tag_and_timestamp(self):
-        path = rx.output_path("inclusionai/ling-3.1-flash", "high", "20261012-153000")
-        expected = rx.ROOT / "results" / "inclusionai-ling-3.1-flash__high__20261012-153000.json"
+    def test_output_path_includes_count_tag_and_timestamp(self):
+        path = rx.output_path("inclusionai/ling-3.1-flash", 44, "high", "20261012-153000")
+        expected = (
+            rx.ROOT / "results" / "inclusionai-ling-3.1-flash__44q__high__20261012-153000.json"
+        )
         self.assertEqual(path, expected)
 
-    def test_output_path_tag_without_timestamp(self):
-        expected = rx.ROOT / "results" / "inclusionai-ling-3.1-flash__none.json"
-        self.assertEqual(rx.output_path("inclusionai/ling-3.1-flash", "none"), expected)
+    def test_output_path_without_timestamp(self):
+        expected = rx.ROOT / "results" / "inclusionai-ling-3.1-flash__100q__none.json"
+        self.assertEqual(rx.output_path("inclusionai/ling-3.1-flash", 100, "none"), expected)
 
     def test_run_stamp_format(self):
         when = time.strptime("2026-10-12 15:30:00", "%Y-%m-%d %H:%M:%S")
         self.assertEqual(rx.run_stamp(when), "20261012-153000")
 
-    def test_questions_file_lives_under_repo_root(self):
-        self.assertEqual(rx.QUESTIONS_FILE, rx.ROOT / "data" / "mmlu_pro_sample.json")
+    def test_questions_file_is_a_sample_under_repo_data(self):
+        self.assertEqual(rx.QUESTIONS_FILE.parent, rx.ROOT / "data")
+        self.assertTrue(rx.QUESTIONS_FILE.name.startswith("mmlu_pro_sample"))
 
 
 class TestLatestResultsPath(unittest.TestCase):
@@ -82,10 +85,10 @@ class TestLatestResultsPath(unittest.TestCase):
             self._touch(newer, 2000)
             self.assertEqual(rx.latest_results_path("m", "effort", "high", d), newer)
 
-    def test_matches_new_tag_names(self):
+    def test_matches_new_tag_names_with_or_without_count(self):
         with tempfile.TemporaryDirectory() as tmp:
             d = Path(tmp)
-            high = d / "m__high__20260202-000000.json"
+            high = d / "m__1000q__high__20260202-000000.json"
             none = d / "m__none__20260101-000000.json"
             self._touch(high, 2000)
             self._touch(none, 1000)

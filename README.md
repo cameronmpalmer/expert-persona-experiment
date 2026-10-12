@@ -120,10 +120,11 @@ Options:
 | `--out FILE` / `--resume` | none | write an explicit file, or continue the newest run for the model (mutually exclusive) |
 | `--dry-run` / `--force` | off | plan only / override the resume-compatibility check |
 
-Each run writes one file named for its reasoning level and start time (UTC):
-`results/{slug}__{reasoning}__{timestamp}.json`, where `{reasoning}` is the
-effort level (`none`, `high`, and so on) or `maxtokens{N}` for the max-tokens
-mode. `results/` is git-ignored, so outputs stay local.
+Each run writes one file named for its question count, reasoning level, and
+start time (UTC): `results/{slug}__{count}q__{reasoning}__{timestamp}.json`,
+where `{count}` is the number of questions and `{reasoning}` is the effort level
+(`none`, `high`, and so on) or `maxtokens{N}` for the max-tokens mode.
+`results/` is git-ignored, so outputs stay local.
 
 The runner retries 429/5xx responses with backoff (5 attempts), saves every 10
 calls, aborts after 3 consecutive failures (exit 2), and on Ctrl-C saves and
