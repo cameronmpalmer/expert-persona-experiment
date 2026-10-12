@@ -2,31 +2,25 @@
 """OpenRouter runner for the "Playing Pretend" persona experiment.
 
 Runs the existing four-condition system-prompt protocol (baseline / expert /
-layperson / toddler) over the 44-question MMLU-Pro sample against an
-OpenAI-compatible OpenRouter endpoint, with thinking enabled.
+layperson / toddler) over a 44-question MMLU-Pro sample against OpenRouter.
 
 Design notes:
-  - output path is derived from the model slug, so --model can never silently
-    reuse another model's results file
   - each entry captures usage, cost, finish_reason, provider, the model the
     provider actually returned, latency, and any error text, so truncation and
     provider routing are analyzable
   - repo root is discovered by walking up from this module to the nearest
     pyproject.toml, so it always reads data/ and writes results/ correctly
-  - --max-tokens defaults to 32768 so thinking plus the answer both fit; a
-    truncated answer is recorded as a real outcome (not retried into a false
-    "non-answer")
   - the request asks OpenRouter to include usage data, and the post-run summary
     totals cost alongside tokens
-  - at most `workers` calls are in flight at once, so an abort or Ctrl-C stops
-    promptly instead of draining a fully submitted queue
-
-Stdlib only. No network calls happen during --dry-run.
+  - tqdm draws a single overall bar, with rate and running ok/fail counts
+  - each run writes a timestamped file so runs never clobber each other; use
+    --resume to continue the most recent file for the model
 
 Usage:
   export OPENROUTER_API_KEY=sk-or-...   # also read from ~/.bashrc if present
   python scripts/run_experiment.py                     # full run
   python scripts/run_experiment.py --limit 5           # smoke test
+  python scripts/run_experiment.py --resume            # continue the last run
   python scripts/run_experiment.py --dry-run --limit 2 # plan only, no calls
 """
 
@@ -36,14 +30,19 @@ import os
 import re
 import statistics
 import sys
+import threading
 import time
 import urllib.error
 import urllib.request
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from pathlib import Path
 
-API_URL = "https://openrouter.ai/api/v1/chat/completions"
-DEFAULT_MODEL = "inclusionai/ling-3.1-flash"
+from tqdm import tqdm
+
+# Use a threading lock for tqdm's write lock. Left to itself tqdm lazily creates
+# a multiprocessing.RLock, whose semaphore the resource tracker reports as
+# leaked when the abort path calls os._exit() without running cleanup.
+tqdm.set_lock(threading.RLock())
 
 
 def find_repo_root(start):
@@ -58,6 +57,10 @@ def find_repo_root(start):
     return start
 
 
+# Constants
+API_URL = "https://openrouter.ai/api/v1/chat/completions"
+DEFAULT_MODEL = "inclusionai/ling-3.1-flash"
+
 ROOT = find_repo_root(Path(__file__).resolve().parent)
 QUESTIONS_FILE = ROOT / "data" / "mmlu_pro_sample.json"
 RESULTS_DIR = ROOT / "results"
@@ -68,9 +71,9 @@ MAX_CONSECUTIVE_FAILURES = 3
 DEFAULT_WORKERS = 8
 DEFAULT_MAX_TOKENS = 32768
 DEFAULT_TEMPERATURE = 0.0
-DEFAULT_SEED = 42
+DEFAULT_SEED = 861
 DEFAULT_REASONING_EFFORT = "high"
-REASONING_EFFORTS = ("minimal", "low", "medium", "high", "xhigh")
+REASONING_EFFORTS = ("none", "minimal", "low", "medium", "high", "xhigh")
 SAVE_EVERY = 10
 
 # Copied verbatim from the original scripts so results are comparable.
@@ -97,9 +100,44 @@ def slugify(model):
     return model.lower().replace("/", "-").replace(":", "-")
 
 
-def output_path(model):
-    """Default results file for a model: results/{slug}__think.json."""
-    return RESULTS_DIR / f"{slugify(model)}__think.json"
+def run_stamp(when=None):
+    """Filesystem-safe UTC timestamp naming a run's output file."""
+    return time.strftime("%Y%m%d-%H%M%S", when if when is not None else time.gmtime())
+
+
+def output_path(model, think=True, stamp=None):
+    """Default results file for a model.
+
+    A thinking run gets results/{slug}__think__{stamp}.json; with thinking off
+    the suffix is dropped (results/{slug}__{stamp}.json). `stamp` is the
+    run-start timestamp, which keeps each run's output file unique; when it is
+    omitted the timestamp is left out of the name.
+    """
+    parts = [slugify(model)]
+    if think:
+        parts.append("think")
+    if stamp:
+        parts.append(stamp)
+    return RESULTS_DIR / ("__".join(parts) + ".json")
+
+
+def latest_results_path(model, think=True, results_dir=None):
+    """Newest existing results file for `model`, or None.
+
+    Matches both the current stamp names (results/{slug}__think__{stamp}.json,
+    or results/{slug}__{stamp}.json with thinking off) and the older un-stamped
+    names, then returns the most recently modified match.
+    """
+    results_dir = Path(results_dir) if results_dir is not None else RESULTS_DIR
+    slug = slugify(model)
+    if think:
+        pattern = re.compile(rf"^{re.escape(slug)}__think(__\d{{8}}-\d{{6}})?\.json$")
+    else:
+        pattern = re.compile(rf"^{re.escape(slug)}(__\d{{8}}-\d{{6}})?\.json$")
+    matches = [p for p in results_dir.glob(f"{slug}*.json") if pattern.match(p.name)]
+    if not matches:
+        return None
+    return max(matches, key=lambda p: p.stat().st_mtime)
 
 
 def load_api_key():
@@ -194,6 +232,11 @@ def resume_check(existing, config, force=False):
     return None
 
 
+def thinking_enabled(reasoning_mode, reasoning_value):
+    """False only when the run explicitly turns thinking off (effort 'none')."""
+    return not (reasoning_mode == "effort" and reasoning_value == "none")
+
+
 def build_payload(
     model,
     system_prompt,
@@ -208,17 +251,19 @@ def build_payload(
     """Build the OpenRouter chat-completions payload.
 
     reasoning_mode is "effort" (send reasoning.effort) or "max_tokens" (send
-    reasoning.max_tokens). Thinking is always on (exclude=False).
+    reasoning.max_tokens). Thinking is on unless the effort is "none", which
+    sends reasoning.enabled=false to turn it off.
     """
     messages = []
     if system_prompt:
         messages.append({"role": "system", "content": system_prompt})
     messages.append({"role": "user", "content": user_content})
-    reasoning = {"exclude": False}
     if reasoning_mode == "max_tokens":
-        reasoning["max_tokens"] = reasoning_value
+        reasoning = {"exclude": False, "max_tokens": reasoning_value}
+    elif reasoning_value == "none":
+        reasoning = {"enabled": False}
     else:
-        reasoning["effort"] = reasoning_value
+        reasoning = {"exclude": False, "effort": reasoning_value}
     payload = {
         "model": model,
         "messages": messages,
@@ -432,10 +477,46 @@ def parse_args(argv):
     p.add_argument("--provider", default=None)
     p.add_argument("--temperature", type=float, default=DEFAULT_TEMPERATURE)
     p.add_argument("--seed", type=int, default=DEFAULT_SEED)
-    p.add_argument("--out", default=None)
+    target = p.add_mutually_exclusive_group()
+    target.add_argument("--out", default=None, help="explicit results file to write or resume")
+    target.add_argument(
+        "--resume",
+        action="store_true",
+        help="resume the most recent results file for this model",
+    )
     p.add_argument("--dry-run", action="store_true")
     p.add_argument("--force", action="store_true")
     return p.parse_args(argv)
+
+
+def start_progress(total):
+    """Open the single overall progress bar, or None when there is no work.
+
+    The bar is written to stderr so stdout stays a clean log of messages.
+    """
+    if not total:
+        return None
+    return tqdm(total=total, desc="all calls", unit="call", dynamic_ncols=True)
+
+
+def update_progress(bar, entry, ok, fail, t0, done):
+    """Advance the overall bar after one call finishes."""
+    if bar is None:
+        return
+    if entry.get("error"):
+        last = "error"
+    else:
+        latency = entry.get("latency_s")
+        last = f"{latency:.1f}s" if latency else "-"
+    elapsed = time.time() - t0
+    rate = done / elapsed if elapsed > 0 else 0.0
+    bar.set_postfix_str(f"last={last} ok={ok} fail={fail} {rate:.2f}/s")
+    bar.update(1)
+
+
+def close_progress(bar):
+    if bar is not None:
+        bar.close()
 
 
 def main(argv=None):
@@ -454,6 +535,9 @@ def main(argv=None):
         reasoning_mode = "effort"
         reasoning_value = args.reasoning_effort
 
+    think = thinking_enabled(reasoning_mode, reasoning_value)
+    think_label = "on" if think else "off"
+
     with open(QUESTIONS_FILE) as f:
         questions = json.load(f)
     if args.limit is not None:
@@ -471,7 +555,16 @@ def main(argv=None):
         args.seed,
         args.provider,
     )
-    out_path = Path(args.out) if args.out else output_path(args.model)
+    stamp = run_stamp()
+    if args.out:
+        out_path = Path(args.out)
+    elif args.resume:
+        out_path = latest_results_path(args.model, think)
+        if out_path is None:
+            print(f"--resume: no existing results for {args.model}; starting a new run.")
+            out_path = output_path(args.model, think, stamp)
+    else:
+        out_path = output_path(args.model, think, stamp)
 
     if args.dry_run:
         planned = n * len(CONDITIONS)
@@ -492,7 +585,10 @@ def main(argv=None):
         print(f"Questions:        {n}")
         print(f"Conditions:       {len(CONDITIONS)} ({', '.join(CONDITIONS)})")
         print(f"Planned calls:    {planned}")
-        print(f"Reasoning:        mode={reasoning_mode} value={reasoning_value}")
+        print(
+            f"Reasoning:        mode={reasoning_mode} value={reasoning_value} "
+            f"(thinking {think_label})"
+        )
         print(f"Resolved out:     {out_path.resolve()}")
         print(f"Example payload (condition='{example_cond}', question id={questions[0]['id']}):")
         print(json.dumps(example_payload, indent=2))
@@ -549,7 +645,7 @@ def main(argv=None):
             tasks.append((cond, q))
 
     print(
-        f"Model: {args.model} [THINK reasoning={reasoning_mode}:{reasoning_value}] | "
+        f"Model: {args.model} [THINK {think_label} reasoning={reasoning_mode}:{reasoning_value}] | "
         f"n={n} | {len(tasks)} tasks remaining | temp={args.temperature} | "
         f"workers={args.workers} | max_tokens={args.max_tokens} | out={out_path}"
     )
@@ -573,11 +669,15 @@ def main(argv=None):
     t0 = time.time()
     done = 0
     total = len(tasks)
+    ok = 0
+    fail = 0
     consecutive_failures = 0
     remaining = iter(tasks)
     pending = {}
     executor = ThreadPoolExecutor(max_workers=args.workers)
     exit_code = 0
+
+    bar = start_progress(total)
 
     def submit_more():
         # Keep at most `workers` calls in flight, so abort/interrupt never has to
@@ -598,13 +698,19 @@ def main(argv=None):
                 cond, q, entry = fut.result()
                 results[cond][q["id"]] = entry
                 done += 1
-                consecutive_failures = consecutive_failures + 1 if entry.get("error") else 0
+                if entry.get("error"):
+                    fail += 1
+                    consecutive_failures += 1
+                else:
+                    ok += 1
+                    consecutive_failures = 0
+                update_progress(bar, entry, ok, fail, t0, done)
 
                 if done % SAVE_EVERY == 0 or done == total:
                     save(out_path, args.model, config, questions, results)
                     elapsed = time.time() - t0
                     rate = done / elapsed if elapsed > 0 else 0
-                    print(f"  [{elapsed:5.0f}s] {done}/{total} done ({rate:.2f}/s)", flush=True)
+                    tqdm.write(f"  [{elapsed:5.0f}s] saved {done}/{total} ({rate:.2f}/s)")
 
                 if consecutive_failures >= MAX_CONSECUTIVE_FAILURES:
                     exit_code = 2
@@ -614,6 +720,8 @@ def main(argv=None):
             submit_more()
     except KeyboardInterrupt:
         exit_code = 130
+
+    close_progress(bar)
 
     if exit_code:
         # Stop scheduling immediately; cancel anything still queued rather than

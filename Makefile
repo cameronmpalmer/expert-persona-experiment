@@ -3,7 +3,8 @@
 # Targets:
 #   make                show this help (default)
 #   make setup          create/sync the .venv (installs ruff)
-#   make test           run the unit tests
+#   make test           run the unit tests with coverage
+#   make coverage-html  write an HTML coverage report to htmlcov/
 #   make lint           check style and bugs with ruff
 #   make format         auto-format with ruff
 #   make format-check   verify formatting without writing
@@ -17,20 +18,22 @@
 #   TESTS=tests         test directory
 #   PATTERN=test_*.py   test file glob within TESTS
 #   ARGS=-q             extra args for unittest (default -v)
+#   COVERAGE=...        coverage binary (default $(VENV)/bin/coverage)
 #   UV=uv               uv binary, used only by `make setup`
 
 UV   ?= uv
 VENV ?= .venv
 
-PY   := $(VENV)/bin/python
-RUFF := $(VENV)/bin/ruff
+PY       := $(VENV)/bin/python
+RUFF     := $(VENV)/bin/ruff
+COVERAGE := $(VENV)/bin/coverage
 
 TESTS   ?= tests
 PATTERN ?= test_*.py
 ARGS    ?= -v
 
 .DEFAULT_GOAL := help
-.PHONY: help setup test lint format format-check check precommit install-hooks clean
+.PHONY: help setup test coverage-html lint format format-check check precommit install-hooks clean
 
 help: ## Show this help
 	@grep -hE '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) \
@@ -39,8 +42,9 @@ help: ## Show this help
 setup: ## Create/sync the dev environment (needs uv on PATH)
 	$(UV) sync
 
-test: ## Run the unit tests (PATTERN=test_x.py, ARGS='...' to narrow)
-	$(PY) -m unittest discover -s $(TESTS) -p '$(PATTERN)' $(ARGS)
+test: ## Run the unit tests with coverage (PATTERN=test_x.py, ARGS='...' to narrow)
+	$(COVERAGE) run -m unittest discover -s $(TESTS) -p '$(PATTERN)' $(ARGS)
+	$(COVERAGE) report
 
 lint: ## Check style and bugs with ruff
 	$(RUFF) check .
@@ -48,16 +52,14 @@ lint: ## Check style and bugs with ruff
 format: ## Auto-format with ruff
 	$(RUFF) format .
 
-format-check: ## Verify formatting with ruff (no writes)
+format-noedit: ## Verify formatting with ruff (no writes)
 	$(RUFF) format --check .
 
-check: lint test ## Lint, then test
-
-precommit: format-check check ## Formatting, lint, and tests in one gate (used by the git hook)
+precommit: format-noedit lint test ## Lint, then test
 
 install-hooks: ## Point git at the tracked .githooks directory
 	git config core.hooksPath .githooks
 
-clean: ## Remove caches (__pycache__, .ruff_cache)
-	rm -rf .ruff_cache
+clean: ## Remove caches (.coverage, htmlcov, __pycache__, .ruff_cache)
+	rm -rf .coverage htmlcov .ruff_cache
 	find . -type d -name __pycache__ -not -path './.venv/*' -exec rm -rf {} +

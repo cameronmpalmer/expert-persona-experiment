@@ -9,10 +9,13 @@ authors = [
 requires-python = ">=3.14"
 dependencies = [
     "pyarrow>=26.0.0",
+    "pytest-cov>=7.1.0",
+    "tqdm>=4.70.1",
 ]
 
 [dependency-groups]
 dev = [
+    "coverage>=7.16.2",
     "ruff>=0.17.0",
 ]
 
@@ -24,3 +27,12 @@ select = ["E", "F", "W", "I", "UP", "B"]
 # Long verbatim study prompts and fixed-width table headers exceed the limit;
 # ruff format keeps code within line-length, E501 would only flag strings.
 ignore = ["E501"]
+
+[tool.coverage.run]
+source = ["scripts"]
+
+[tool.coverage.report]
+# The suite covers scripts/run_experiment.py; measure all of scripts/ but report
+# on that module. Widen `include` as the other scripts gain tests.
+include = ["scripts/run_experiment.py"]
+show_missing = true

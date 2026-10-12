@@ -1,6 +1,9 @@
 """Unit tests for scripts/run_experiment.py. No network access."""
 
 import importlib.util
+import os
+import tempfile
+import time
 import unittest
 from pathlib import Path
 
@@ -45,8 +48,60 @@ class TestModelSlugAndPaths(unittest.TestCase):
         expected = rx.ROOT / "results" / "inclusionai-ling-3.1-flash__think.json"
         self.assertEqual(rx.output_path("inclusionai/ling-3.1-flash"), expected)
 
+    def test_output_path_thinking_off_drops_think_suffix(self):
+        expected = rx.ROOT / "results" / "inclusionai-ling-3.1-flash.json"
+        self.assertEqual(rx.output_path("inclusionai/ling-3.1-flash", think=False), expected)
+
+    def test_output_path_includes_timestamp(self):
+        path = rx.output_path("inclusionai/ling-3.1-flash", think=True, stamp="20261012-153000")
+        expected = rx.ROOT / "results" / "inclusionai-ling-3.1-flash__think__20261012-153000.json"
+        self.assertEqual(path, expected)
+
+    def test_output_path_timestamp_without_think(self):
+        path = rx.output_path("inclusionai/ling-3.1-flash", think=False, stamp="20261012-153000")
+        expected = rx.ROOT / "results" / "inclusionai-ling-3.1-flash__20261012-153000.json"
+        self.assertEqual(path, expected)
+
+    def test_run_stamp_format(self):
+        when = time.strptime("2026-10-12 15:30:00", "%Y-%m-%d %H:%M:%S")
+        self.assertEqual(rx.run_stamp(when), "20261012-153000")
+
     def test_questions_file_lives_under_repo_root(self):
         self.assertEqual(rx.QUESTIONS_FILE, rx.ROOT / "data" / "mmlu_pro_sample.json")
+
+
+class TestLatestResultsPath(unittest.TestCase):
+    def _touch(self, path, mtime):
+        path.write_text("{}")
+        os.utime(path, (mtime, mtime))
+
+    def test_picks_most_recent_match(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            d = Path(tmp)
+            older = d / "m__think__20260101-000000.json"
+            newer = d / "m__think__20260202-000000.json"
+            self._touch(older, 1000)
+            self._touch(newer, 2000)
+            self.assertEqual(rx.latest_results_path("m", True, d), newer)
+
+    def test_thinking_off_ignores_think_files(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            d = Path(tmp)
+            think = d / "m__think__20260202-000000.json"
+            plain = d / "m__20260101-000000.json"
+            self._touch(think, 2000)
+            self._touch(plain, 1000)
+            self.assertEqual(rx.latest_results_path("m", False, d), plain)
+
+    def test_ignores_other_models(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            d = Path(tmp)
+            self._touch(d / "other__think__20260202-000000.json", 2000)
+            self.assertIsNone(rx.latest_results_path("m", True, d))
+
+    def test_none_when_no_results(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertIsNone(rx.latest_results_path("m", True, Path(tmp)))
 
 
 class TestExtractUsage(unittest.TestCase):
@@ -213,10 +268,25 @@ class TestBuildPayload(unittest.TestCase):
         self.assertEqual(payload["reasoning"], {"exclude": False, "max_tokens": 4096})
         self.assertNotIn("effort", payload["reasoning"])
 
+    def test_reasoning_none_disables_thinking(self):
+        payload = self._build(reasoning_value="none")
+        self.assertEqual(payload["reasoning"], {"enabled": False})
+
     def test_empty_persona_omits_system_message(self):
         payload = self._build(system_prompt="")
         self.assertEqual(len(payload["messages"]), 1)
         self.assertEqual(payload["messages"][0]["role"], "user")
+
+
+class TestThinkingEnabled(unittest.TestCase):
+    def test_effort_none_is_off(self):
+        self.assertFalse(rx.thinking_enabled("effort", "none"))
+
+    def test_effort_value_is_on(self):
+        self.assertTrue(rx.thinking_enabled("effort", "high"))
+
+    def test_max_tokens_mode_is_on(self):
+        self.assertTrue(rx.thinking_enabled("max_tokens", 4096))
 
 
 class TestErrorEntry(unittest.TestCase):
@@ -278,6 +348,52 @@ class TestRunTask(unittest.TestCase):
         self.assertEqual(entry["finish_reason"], "length")
         self.assertIsNone(entry["error"])
         self.assertEqual(entry["provider"], "InclusionAI")
+
+
+class _FakeBar:
+    def __init__(self):
+        self.postfix = None
+        self.advanced = 0
+        self.closed = False
+
+    def set_postfix_str(self, s):
+        self.postfix = s
+
+    def update(self, n):
+        self.advanced += n
+
+    def close(self):
+        self.closed = True
+
+
+class TestProgress(unittest.TestCase):
+    def test_no_work_returns_no_bar(self):
+        self.assertIsNone(rx.start_progress(0))
+
+    def test_update_progress_none_bar_is_noop(self):
+        rx.update_progress(None, {"latency_s": 1.0}, ok=1, fail=0, t0=time.time(), done=1)
+
+    def test_update_progress_advances_and_reports(self):
+        bar = _FakeBar()
+        rx.update_progress(
+            bar, {"latency_s": 2.5, "error": None}, ok=3, fail=0, t0=time.time() - 10, done=3
+        )
+        self.assertEqual(bar.advanced, 1)
+        self.assertIn("ok=3", bar.postfix)
+        self.assertIn("fail=0", bar.postfix)
+
+    def test_update_progress_marks_error(self):
+        bar = _FakeBar()
+        rx.update_progress(
+            bar, {"latency_s": None, "error": "HTTP 429"}, ok=3, fail=1, t0=time.time(), done=4
+        )
+        self.assertIn("last=error", bar.postfix)
+
+    def test_close_progress_closes_and_ignores_none(self):
+        bar = _FakeBar()
+        rx.close_progress(bar)
+        self.assertTrue(bar.closed)
+        rx.close_progress(None)  # must not raise
 
 
 if __name__ == "__main__":
