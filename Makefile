@@ -1,13 +1,16 @@
 # Developer tasks for the persona experiment.
 #
 # Targets:
-#   make            show this help (default)
-#   make setup      create/sync the .venv (installs ruff)
-#   make test       run the unit tests
-#   make lint       check style and bugs with ruff
-#   make format     auto-format with ruff
-#   make check      lint, then test
-#   make clean      remove caches
+#   make                show this help (default)
+#   make setup          create/sync the .venv (installs ruff)
+#   make test           run the unit tests
+#   make lint           check style and bugs with ruff
+#   make format         auto-format with ruff
+#   make format-check   verify formatting without writing
+#   make check          lint, then test
+#   make precommit      format-check, lint, then test (run by the git hook)
+#   make install-hooks  point git at the tracked .githooks directory
+#   make clean          remove caches
 #
 # Overrides:
 #   VENV=.venv          virtualenv directory
@@ -27,11 +30,11 @@ PATTERN ?= test_*.py
 ARGS    ?= -v
 
 .DEFAULT_GOAL := help
-.PHONY: help setup test lint format check clean
+.PHONY: help setup test lint format format-check check precommit install-hooks clean
 
 help: ## Show this help
 	@grep -hE '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) \
-		| awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-8s\033[0m %s\n", $$1, $$2}'
+		| awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
 
 setup: ## Create/sync the dev environment (needs uv on PATH)
 	$(UV) sync
@@ -45,7 +48,15 @@ lint: ## Check style and bugs with ruff
 format: ## Auto-format with ruff
 	$(RUFF) format .
 
+format-check: ## Verify formatting with ruff (no writes)
+	$(RUFF) format --check .
+
 check: lint test ## Lint, then test
+
+precommit: format-check check ## Formatting, lint, and tests in one gate (used by the git hook)
+
+install-hooks: ## Point git at the tracked .githooks directory
+	git config core.hooksPath .githooks
 
 clean: ## Remove caches (__pycache__, .ruff_cache)
 	rm -rf .ruff_cache
