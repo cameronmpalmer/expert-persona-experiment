@@ -10,10 +10,3 @@ requires-python = ">=3.14"
 dependencies = [
     "pyarrow>=26.0.0",
 ]
-
-[project.scripts]
-persona-experiment = "persona_experiment:main"
-
-[build-system]
-requires = ["uv_build>=0.12.19,<0.13.0"]
-build-backend = "uv_build"
