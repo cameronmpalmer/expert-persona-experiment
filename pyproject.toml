@@ -10,3 +10,17 @@ requires-python = ">=3.14"
 dependencies = [
     "pyarrow>=26.0.0",
 ]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.17.0",
+]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B"]
+# Long verbatim study prompts and fixed-width table headers exceed the limit;
+# ruff format keeps code within line-length, E501 would only flag strings.
+ignore = ["E501"]

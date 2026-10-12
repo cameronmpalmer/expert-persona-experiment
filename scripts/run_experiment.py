@@ -123,7 +123,7 @@ def load_api_key():
 def build_user_message(question, options):
     letters = [chr(65 + i) for i in range(len(options))]
     lines = [f"Question: {question}"]
-    lines += [f"{letter}) {opt}" for letter, opt in zip(letters, options)]
+    lines += [f"{letter}) {opt}" for letter, opt in zip(letters, options, strict=True)]
     return USER_INSTRUCTION + "\n".join(lines)
 
 
@@ -147,7 +147,9 @@ def extract_usage(data):
     }
 
 
-def config_signature(model, max_tokens, reasoning_mode, reasoning_value, temperature, seed, provider):
+def config_signature(
+    model, max_tokens, reasoning_mode, reasoning_value, temperature, seed, provider
+):
     """Configuration identity used to guard resume against silent drift."""
     return {
         "model": slugify(model),
@@ -179,17 +181,30 @@ def resume_check(existing, config, force=False):
         return "existing results file is not a JSON object"
     stored = existing.get("config")
     if not isinstance(stored, dict):
-        return ("existing results file has no usable 'config' signature; cannot "
-                "verify it matches this run")
+        return (
+            "existing results file has no usable 'config' signature; cannot "
+            "verify it matches this run"
+        )
     mismatch = signature_mismatches(stored, config)
     if mismatch:
-        return ("existing results file was produced with a different config "
-                f"(differing keys: {', '.join(mismatch)})")
+        return (
+            "existing results file was produced with a different config "
+            f"(differing keys: {', '.join(mismatch)})"
+        )
     return None
 
 
-def build_payload(model, system_prompt, user_content, temperature, max_tokens, seed,
-                  reasoning_mode, reasoning_value, provider=None):
+def build_payload(
+    model,
+    system_prompt,
+    user_content,
+    temperature,
+    max_tokens,
+    seed,
+    reasoning_mode,
+    reasoning_value,
+    provider=None,
+):
     """Build the OpenRouter chat-completions payload.
 
     reasoning_mode is "effort" (send reasoning.effort) or "max_tokens" (send
@@ -248,12 +263,12 @@ def call_with_retries(api_key, payload):
                 pass
             if e.code == 429 or e.code >= 500:
                 last_err = f"HTTP {e.code}: {body[:200]}"
-                time.sleep(min(2 ** attempt, 30))
+                time.sleep(min(2**attempt, 30))
                 continue
             raise
         except Exception as e:  # network/parse failures are retried
             last_err = f"{type(e).__name__}: {e}"
-            time.sleep(min(2 ** attempt, 30))
+            time.sleep(min(2**attempt, 30))
             continue
     raise RuntimeError(f"failed after {MAX_RETRIES} attempts: {last_err}")
 
@@ -274,16 +289,34 @@ def error_entry(error):
     }
 
 
-def run_task(api_key, model, q, system_prompt, *, max_tokens, temperature, seed,
-             reasoning_mode, reasoning_value, provider):
+def run_task(
+    api_key,
+    model,
+    q,
+    system_prompt,
+    *,
+    max_tokens,
+    temperature,
+    seed,
+    reasoning_mode,
+    reasoning_value,
+    provider,
+):
     """Execute one (condition, question) call and return its result entry.
 
     Empty/truncated answers are recorded as-is (finish_reason preserved); they
     are never retried, so truncation stays distinct from a wrong answer.
     """
     payload = build_payload(
-        model, system_prompt, build_user_message(q["question"], q["options"]),
-        temperature, max_tokens, seed, reasoning_mode, reasoning_value, provider,
+        model,
+        system_prompt,
+        build_user_message(q["question"], q["options"]),
+        temperature,
+        max_tokens,
+        seed,
+        reasoning_mode,
+        reasoning_value,
+        provider,
     )
     t0 = time.time()
     try:
@@ -341,8 +374,10 @@ def print_summary(results, questions):
         nonans = sum(1 for e in present if e.get("answer") == "?")
         wrong = len(present) - correct - nonans
         acc[cond] = correct / n if n else 0.0
-        print(f"  {cond:<10} correct={correct:>2}  wrong={wrong:>2}  "
-              f"non-answer={nonans:>2}  ({acc[cond]:.0%} correct)")
+        print(
+            f"  {cond:<10} correct={correct:>2}  wrong={wrong:>2}  "
+            f"non-answer={nonans:>2}  ({acc[cond]:.0%} correct)"
+        )
 
     base = acc.get("baseline", 0.0)
     print("\n=== Deltas vs baseline (pp) ===")
@@ -374,22 +409,25 @@ def print_summary(results, questions):
     total_cost = f"{sum(costs):.6f}" if costs else "n/a"
 
     print("\n=== Tokens ===")
-    print(f"  total prompt={prompt_tokens}  completion={completion_tokens}  "
-          f"reasoning={reasoning_tokens}  median reasoning={median_reasoning}")
+    print(
+        f"  total prompt={prompt_tokens}  completion={completion_tokens}  "
+        f"reasoning={reasoning_tokens}  median reasoning={median_reasoning}"
+    )
     print(f"  total cost: {total_cost}")
     print(f"  finish_reason == 'length' count: {length_count}")
 
 
 def parse_args(argv):
     p = argparse.ArgumentParser(
-        description="OpenRouter persona-experiment runner (thinking on).",
+        description="OpenRouter-based persona experiment runner",
     )
     p.add_argument("--model", default=DEFAULT_MODEL)
     p.add_argument("--limit", type=int, default=None)
     p.add_argument("--workers", type=int, default=DEFAULT_WORKERS)
     p.add_argument("--max-tokens", type=int, default=DEFAULT_MAX_TOKENS)
-    p.add_argument("--reasoning-effort", choices=REASONING_EFFORTS,
-                   default=DEFAULT_REASONING_EFFORT)
+    p.add_argument(
+        "--reasoning-effort", choices=REASONING_EFFORTS, default=DEFAULT_REASONING_EFFORT
+    )
     p.add_argument("--reasoning-max-tokens", type=int, default=None)
     p.add_argument("--provider", default=None)
     p.add_argument("--temperature", type=float, default=DEFAULT_TEMPERATURE)
@@ -419,14 +457,19 @@ def main(argv=None):
     with open(QUESTIONS_FILE) as f:
         questions = json.load(f)
     if args.limit is not None:
-        questions = questions[:args.limit]
+        questions = questions[: args.limit]
     n = len(questions)
     if n == 0:
         raise SystemExit("no questions loaded")
 
     config = config_signature(
-        args.model, args.max_tokens, reasoning_mode, reasoning_value,
-        args.temperature, args.seed, args.provider,
+        args.model,
+        args.max_tokens,
+        reasoning_mode,
+        reasoning_value,
+        args.temperature,
+        args.seed,
+        args.provider,
     )
     out_path = Path(args.out) if args.out else output_path(args.model)
 
@@ -434,10 +477,15 @@ def main(argv=None):
         planned = n * len(CONDITIONS)
         example_cond = "expert" if "expert" in CONDITIONS else next(iter(CONDITIONS))
         example_payload = build_payload(
-            args.model, CONDITIONS[example_cond],
+            args.model,
+            CONDITIONS[example_cond],
             build_user_message(questions[0]["question"], questions[0]["options"]),
-            args.temperature, args.max_tokens, args.seed,
-            reasoning_mode, reasoning_value, args.provider,
+            args.temperature,
+            args.max_tokens,
+            args.seed,
+            reasoning_mode,
+            reasoning_value,
+            args.provider,
         )
         print("=== DRY RUN (no network calls) ===")
         print(f"Model:            {args.model}")
@@ -460,20 +508,29 @@ def main(argv=None):
                 existing = json.load(f)
         except (json.JSONDecodeError, OSError) as e:
             if not args.force:
-                print(f"Refusing to resume: could not read existing results file {out_path} "
-                      f"({type(e).__name__}: {e}).", file=sys.stderr)
-                print("Re-run with --force to start fresh, or pass --out to a new path.",
-                      file=sys.stderr)
+                print(
+                    f"Refusing to resume: could not read existing results file {out_path} "
+                    f"({type(e).__name__}: {e}).",
+                    file=sys.stderr,
+                )
+                print(
+                    "Re-run with --force to start fresh, or pass --out to a new path.",
+                    file=sys.stderr,
+                )
                 sys.exit(1)
-            print(f"Warning: ignoring unreadable results file {out_path} "
-                  f"({type(e).__name__}).", file=sys.stderr)
+            print(
+                f"Warning: ignoring unreadable results file {out_path} ({type(e).__name__}).",
+                file=sys.stderr,
+            )
             existing = None
 
         problem = resume_check(existing, config, args.force)
         if problem:
             print(f"Refusing to resume: {problem}.", file=sys.stderr)
-            print("Re-run with --force to extend it anyway, or pass --out to a new path.",
-                  file=sys.stderr)
+            print(
+                "Re-run with --force to extend it anyway, or pass --out to a new path.",
+                file=sys.stderr,
+            )
             sys.exit(1)
 
     if isinstance(existing, dict):
@@ -491,14 +548,19 @@ def main(argv=None):
                 continue
             tasks.append((cond, q))
 
-    print(f"Model: {args.model} [THINK reasoning={reasoning_mode}:{reasoning_value}] | "
-          f"n={n} | {len(tasks)} tasks remaining | temp={args.temperature} | "
-          f"workers={args.workers} | max_tokens={args.max_tokens} | out={out_path}")
+    print(
+        f"Model: {args.model} [THINK reasoning={reasoning_mode}:{reasoning_value}] | "
+        f"n={n} | {len(tasks)} tasks remaining | temp={args.temperature} | "
+        f"workers={args.workers} | max_tokens={args.max_tokens} | out={out_path}"
+    )
 
     def worker(task):
         cond, q = task
         entry = run_task(
-            api_key, args.model, q, CONDITIONS[cond],
+            api_key,
+            args.model,
+            q,
+            CONDITIONS[cond],
             max_tokens=args.max_tokens,
             temperature=args.temperature,
             seed=args.seed,
@@ -532,7 +594,7 @@ def main(argv=None):
         while pending:
             finished, _ = wait(set(pending), return_when=FIRST_COMPLETED)
             for fut in finished:
-                task = pending.pop(fut)
+                pending.pop(fut)
                 cond, q, entry = fut.result()
                 results[cond][q["id"]] = entry
                 done += 1
@@ -559,19 +621,28 @@ def main(argv=None):
         save(out_path, args.model, config, questions, results)
         executor.shutdown(wait=False, cancel_futures=True)
         if exit_code == 2:
-            print(f"\nABORT: {consecutive_failures} consecutive failures - API may be "
-                  "wedged. Progress saved; rerun to resume.", file=sys.stderr, flush=True)
+            print(
+                f"\nABORT: {consecutive_failures} consecutive failures - API may be "
+                "wedged. Progress saved; rerun to resume.",
+                file=sys.stderr,
+                flush=True,
+            )
         else:
-            print(f"\nInterrupted - progress saved to {out_path} ({done}/{total} done). "
-                  "Rerun to resume.", flush=True)
+            print(
+                f"\nInterrupted - progress saved to {out_path} ({done}/{total} done). "
+                "Rerun to resume.",
+                flush=True,
+            )
         sys.stdout.flush()
         sys.stderr.flush()
         os._exit(exit_code)
 
     executor.shutdown(wait=True)
     save(out_path, args.model, config, questions, results)
-    print(f"\nModel: {args.model} [THINK] | MMLU-Pro sample n={n} | temp={args.temperature} | "
-          f"elapsed {time.time() - t0:.0f}s")
+    print(
+        f"\nModel: {args.model} [THINK] | MMLU-Pro sample n={n} | temp={args.temperature} | "
+        f"elapsed {time.time() - t0:.0f}s"
+    )
     print_summary(results, questions)
     return 0
 

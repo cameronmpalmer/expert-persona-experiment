@@ -11,8 +11,15 @@ import pyarrow.parquet as pq
 SEED = 42
 N = 44
 CATEGORIES = {
-    "physics", "chemistry", "biology", "computer_science", "engineering",
-    "law", "economics", "math", "history",
+    "physics",
+    "chemistry",
+    "biology",
+    "computer_science",
+    "engineering",
+    "law",
+    "economics",
+    "math",
+    "history",
 }
 
 t = pq.read_table("mmlu_pro_test.parquet")
@@ -20,9 +27,12 @@ data = t.to_pylist()
 
 filtered = [r for r in data if r.get("category") in CATEGORIES]
 valid = [
-    r for r in filtered
-    if isinstance(r.get("options"), list) and len(r["options"]) >= 2
-    and isinstance(r.get("answer_index"), int) and 0 <= r["answer_index"] < len(r["options"])
+    r
+    for r in filtered
+    if isinstance(r.get("options"), list)
+    and len(r["options"]) >= 2
+    and isinstance(r.get("answer_index"), int)
+    and 0 <= r["answer_index"] < len(r["options"])
 ]
 print(f"rows={len(data)} filtered={len(filtered)} valid={len(valid)}")
 
@@ -33,7 +43,7 @@ sample.sort(key=lambda r: r.get("category", ""))
 
 out = [
     {
-        "id": f"{i+1:02d}",
+        "id": f"{i + 1:02d}",
         "category": r.get("category"),
         "question": r["question"],
         "options": r["options"],

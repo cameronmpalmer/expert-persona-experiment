@@ -234,10 +234,12 @@ class TestRunTask(unittest.TestCase):
         response = {
             "model": "inclusionai/ling-3.1-flash",
             "provider": "InclusionAI",
-            "choices": [{
-                "finish_reason": "length",
-                "message": {"content": "", "reasoning": "long thought..."},
-            }],
+            "choices": [
+                {
+                    "finish_reason": "length",
+                    "message": {"content": "", "reasoning": "long thought..."},
+                }
+            ],
             "usage": {
                 "prompt_tokens": 10,
                 "completion_tokens": 32768,
@@ -256,9 +258,16 @@ class TestRunTask(unittest.TestCase):
         rx.call_with_retries = fake_call
         try:
             entry = rx.run_task(
-                "fake-key", "inclusionai/ling-3.1-flash", self.Q, "",
-                max_tokens=32768, temperature=0.0, seed=42,
-                reasoning_mode="effort", reasoning_value="high", provider=None,
+                "fake-key",
+                "inclusionai/ling-3.1-flash",
+                self.Q,
+                "",
+                max_tokens=32768,
+                temperature=0.0,
+                seed=42,
+                reasoning_mode="effort",
+                reasoning_value="high",
+                provider=None,
             )
         finally:
             rx.call_with_retries = original
