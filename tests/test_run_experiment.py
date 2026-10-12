@@ -44,23 +44,21 @@ class TestModelSlugAndPaths(unittest.TestCase):
     def test_slug_replaces_colon(self):
         self.assertEqual(rx.slugify("qwen3.5:9b"), "qwen3.5-9b")
 
-    def test_output_path_for_default_model(self):
-        expected = rx.ROOT / "results" / "inclusionai-ling-3.1-flash__think.json"
-        self.assertEqual(rx.output_path("inclusionai/ling-3.1-flash"), expected)
+    def test_reasoning_tag_effort_is_the_level(self):
+        self.assertEqual(rx.reasoning_tag("effort", "none"), "none")
+        self.assertEqual(rx.reasoning_tag("effort", "high"), "high")
 
-    def test_output_path_thinking_off_drops_think_suffix(self):
-        expected = rx.ROOT / "results" / "inclusionai-ling-3.1-flash.json"
-        self.assertEqual(rx.output_path("inclusionai/ling-3.1-flash", think=False), expected)
+    def test_reasoning_tag_max_tokens(self):
+        self.assertEqual(rx.reasoning_tag("max_tokens", 4096), "maxtokens4096")
 
-    def test_output_path_includes_timestamp(self):
-        path = rx.output_path("inclusionai/ling-3.1-flash", think=True, stamp="20261012-153000")
-        expected = rx.ROOT / "results" / "inclusionai-ling-3.1-flash__think__20261012-153000.json"
+    def test_output_path_uses_reasoning_tag_and_timestamp(self):
+        path = rx.output_path("inclusionai/ling-3.1-flash", "high", "20261012-153000")
+        expected = rx.ROOT / "results" / "inclusionai-ling-3.1-flash__high__20261012-153000.json"
         self.assertEqual(path, expected)
 
-    def test_output_path_timestamp_without_think(self):
-        path = rx.output_path("inclusionai/ling-3.1-flash", think=False, stamp="20261012-153000")
-        expected = rx.ROOT / "results" / "inclusionai-ling-3.1-flash__20261012-153000.json"
-        self.assertEqual(path, expected)
+    def test_output_path_tag_without_timestamp(self):
+        expected = rx.ROOT / "results" / "inclusionai-ling-3.1-flash__none.json"
+        self.assertEqual(rx.output_path("inclusionai/ling-3.1-flash", "none"), expected)
 
     def test_run_stamp_format(self):
         when = time.strptime("2026-10-12 15:30:00", "%Y-%m-%d %H:%M:%S")
@@ -75,14 +73,24 @@ class TestLatestResultsPath(unittest.TestCase):
         path.write_text("{}")
         os.utime(path, (mtime, mtime))
 
-    def test_picks_most_recent_match(self):
+    def test_matches_legacy_think_names(self):
         with tempfile.TemporaryDirectory() as tmp:
             d = Path(tmp)
             older = d / "m__think__20260101-000000.json"
             newer = d / "m__think__20260202-000000.json"
             self._touch(older, 1000)
             self._touch(newer, 2000)
-            self.assertEqual(rx.latest_results_path("m", True, d), newer)
+            self.assertEqual(rx.latest_results_path("m", "effort", "high", d), newer)
+
+    def test_matches_new_tag_names(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            d = Path(tmp)
+            high = d / "m__high__20260202-000000.json"
+            none = d / "m__none__20260101-000000.json"
+            self._touch(high, 2000)
+            self._touch(none, 1000)
+            self.assertEqual(rx.latest_results_path("m", "effort", "high", d), high)
+            self.assertEqual(rx.latest_results_path("m", "effort", "none", d), none)
 
     def test_thinking_off_ignores_think_files(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -91,17 +99,27 @@ class TestLatestResultsPath(unittest.TestCase):
             plain = d / "m__20260101-000000.json"
             self._touch(think, 2000)
             self._touch(plain, 1000)
-            self.assertEqual(rx.latest_results_path("m", False, d), plain)
+            self.assertEqual(rx.latest_results_path("m", "effort", "none", d), plain)
 
     def test_ignores_other_models(self):
         with tempfile.TemporaryDirectory() as tmp:
             d = Path(tmp)
             self._touch(d / "other__think__20260202-000000.json", 2000)
-            self.assertIsNone(rx.latest_results_path("m", True, d))
+            self.assertIsNone(rx.latest_results_path("m", "effort", "high", d))
 
     def test_none_when_no_results(self):
         with tempfile.TemporaryDirectory() as tmp:
-            self.assertIsNone(rx.latest_results_path("m", True, Path(tmp)))
+            self.assertIsNone(rx.latest_results_path("m", "effort", "high", Path(tmp)))
+
+
+class TestParseArgs(unittest.TestCase):
+    def test_questions_file_defaults_to_none(self):
+        self.assertIsNone(rx.parse_args([]).questions_file)
+
+    def test_questions_file_flag(self):
+        self.assertEqual(
+            rx.parse_args(["--questions-file", "/tmp/q.json"]).questions_file, "/tmp/q.json"
+        )
 
 
 class TestExtractUsage(unittest.TestCase):
@@ -371,23 +389,16 @@ class TestProgress(unittest.TestCase):
         self.assertIsNone(rx.start_progress(0))
 
     def test_update_progress_none_bar_is_noop(self):
-        rx.update_progress(None, {"latency_s": 1.0}, ok=1, fail=0, t0=time.time(), done=1)
+        rx.update_progress(None, ok=1, fail=0, cost=0.0, t0=time.time(), done=1)
 
     def test_update_progress_advances_and_reports(self):
         bar = _FakeBar()
-        rx.update_progress(
-            bar, {"latency_s": 2.5, "error": None}, ok=3, fail=0, t0=time.time() - 10, done=3
-        )
+        rx.update_progress(bar, ok=3, fail=1, cost=0.0123, t0=time.time() - 10, done=4)
         self.assertEqual(bar.advanced, 1)
         self.assertIn("ok=3", bar.postfix)
-        self.assertIn("fail=0", bar.postfix)
-
-    def test_update_progress_marks_error(self):
-        bar = _FakeBar()
-        rx.update_progress(
-            bar, {"latency_s": None, "error": "HTTP 429"}, ok=3, fail=1, t0=time.time(), done=4
-        )
-        self.assertIn("last=error", bar.postfix)
+        self.assertIn("fail=1", bar.postfix)
+        self.assertIn("$0.0123", bar.postfix)
+        self.assertNotIn("last=", bar.postfix)
 
     def test_close_progress_closes_and_ignores_none(self):
         bar = _FakeBar()

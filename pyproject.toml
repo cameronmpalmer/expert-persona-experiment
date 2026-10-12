@@ -32,7 +32,7 @@ ignore = ["E501"]
 source = ["scripts"]
 
 [tool.coverage.report]
-# The suite covers scripts/run_experiment.py; measure all of scripts/ but report
-# on that module. Widen `include` as the other scripts gain tests.
-include = ["scripts/run_experiment.py"]
+# Report only on modules the suite tests; measure all of scripts/. Add modules
+# here as they gain tests.
+include = ["scripts/run_experiment.py", "scripts/sample_mmlu.py"]
 show_missing = true

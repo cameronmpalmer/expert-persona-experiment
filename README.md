@@ -108,7 +108,8 @@ Options:
 
 | Option | Default | Meaning |
 |---|---|---|
-| `--model` | `inclusionai/ling-3.1-flash` | OpenRouter model slug |
+| `--model` | `inclusionai/ling-3.0-flash` | OpenRouter model slug |
+| `--questions-file` | `data/mmlu_pro_sample.json` | question JSON to run |
 | `--limit N` | all 44 | first N questions (N x 4 calls) |
 | `--workers N` | 8 | calls in flight at once |
 | `--max-tokens N` | 32768 | completion budget (thinking plus answer) |
@@ -119,9 +120,10 @@ Options:
 | `--out FILE` / `--resume` | none | write an explicit file, or continue the newest run for the model (mutually exclusive) |
 | `--dry-run` / `--force` | off | plan only / override the resume-compatibility check |
 
-Each run writes one file named for when it started (UTC):
-`results/{slug}__think__{timestamp}.json`, or `results/{slug}__{timestamp}.json`
-when thinking is off. `results/` is git-ignored, so outputs stay local.
+Each run writes one file named for its reasoning level and start time (UTC):
+`results/{slug}__{reasoning}__{timestamp}.json`, where `{reasoning}` is the
+effort level (`none`, `high`, and so on) or `maxtokens{N}` for the max-tokens
+mode. `results/` is git-ignored, so outputs stay local.
 
 The runner retries 429/5xx responses with backoff (5 attempts), saves every 10
 calls, aborts after 3 consecutive failures (exit 2), and on Ctrl-C saves and
@@ -152,12 +154,32 @@ from wrong answers.
 
 ### Regenerate the question sample
 
-`scripts/sample_mmlu.py` reads and writes its files relative to the working
-directory, so run it from `data/`:
+`scripts/sample_mmlu.py` samples from a parquet and writes the question JSON.
+The default output name carries the count (`data/mmlu_pro_sample_<n>.json`) so it
+does not overwrite the committed `data/mmlu_pro_sample.json` the runner reads,
+and it confirms before writing (`--yes` skips the prompt):
 
 ```bash
-cd data && ../.venv/bin/python ../scripts/sample_mmlu.py   # needs pyarrow
+# reproduce the committed sample (study categories, seed=42, 44 questions)
+.venv/bin/python scripts/sample_mmlu.py
+
+# write straight to the file the runner reads
+.venv/bin/python scripts/sample_mmlu.py -o data/mmlu_pro_sample.json --yes
 ```
+
+For another dataset, pass the paths, count, seed, and categories, and remap the
+column names (defaults match the MMLU-Pro schema):
+
+```bash
+.venv/bin/python scripts/sample_mmlu.py \
+  --input /path/to/other.parquet --output /path/to/sample.json \
+  --n 100 --seed 7 --categories all --yes
+```
+
+`--categories all` skips category filtering; a comma list keeps only those
+categories (for example `--categories math,physics`). `--question-col`,
+`--options-col`, `--answer-col`, and `--category-col` map the source columns,
+and the answer column must hold a 0-based index into the options.
 
 ## Development
 

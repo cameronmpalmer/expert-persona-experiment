@@ -59,7 +59,7 @@ def find_repo_root(start):
 
 # Constants
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
-DEFAULT_MODEL = "inclusionai/ling-3.1-flash"
+DEFAULT_MODEL = "inclusionai/ling-3.0-flash"
 
 ROOT = find_repo_root(Path(__file__).resolve().parent)
 QUESTIONS_FILE = ROOT / "data" / "mmlu_pro_sample.json"
@@ -68,7 +68,7 @@ RESULTS_DIR = ROOT / "results"
 REQUEST_TIMEOUT = 180
 MAX_RETRIES = 5
 MAX_CONSECUTIVE_FAILURES = 3
-DEFAULT_WORKERS = 8
+DEFAULT_WORKERS = 20
 DEFAULT_MAX_TOKENS = 32768
 DEFAULT_TEMPERATURE = 0.0
 DEFAULT_SEED = 861
@@ -105,36 +105,52 @@ def run_stamp(when=None):
     return time.strftime("%Y%m%d-%H%M%S", when if when is not None else time.gmtime())
 
 
-def output_path(model, think=True, stamp=None):
+def reasoning_tag(reasoning_mode, reasoning_value):
+    """Filename fragment for the reasoning setting (for example none or high)."""
+    if reasoning_mode == "max_tokens":
+        return f"maxtokens{reasoning_value}"
+    return str(reasoning_value)
+
+
+def output_path(model, tag=None, stamp=None):
     """Default results file for a model.
 
-    A thinking run gets results/{slug}__think__{stamp}.json; with thinking off
-    the suffix is dropped (results/{slug}__{stamp}.json). `stamp` is the
-    run-start timestamp, which keeps each run's output file unique; when it is
-    omitted the timestamp is left out of the name.
+    results/{slug}__{tag}__{stamp}.json, where `tag` is the reasoning_tag (for
+    example none, high, or maxtokens4096) and `stamp` is the run-start timestamp.
+    The tag keeps runs at different reasoning levels apart, and the stamp keeps
+    each run unique; either may be omitted.
     """
     parts = [slugify(model)]
-    if think:
-        parts.append("think")
+    if tag:
+        parts.append(tag)
     if stamp:
         parts.append(stamp)
     return RESULTS_DIR / ("__".join(parts) + ".json")
 
 
-def latest_results_path(model, think=True, results_dir=None):
-    """Newest existing results file for `model`, or None.
+def latest_results_path(model, reasoning_mode, reasoning_value, results_dir=None):
+    """Newest existing results file for `model` at this reasoning setting, or None.
 
-    Matches both the current stamp names (results/{slug}__think__{stamp}.json,
-    or results/{slug}__{stamp}.json with thinking off) and the older un-stamped
-    names, then returns the most recently modified match.
+    Matches the current tag names (results/{slug}__{tag}__{stamp}.json) plus the
+    legacy names (results/{slug}__think__(stamp).json when thinking is on, or
+    results/{slug}__(stamp).json when it is off), then returns the most recently
+    modified match.
     """
     results_dir = Path(results_dir) if results_dir is not None else RESULTS_DIR
-    slug = slugify(model)
-    if think:
-        pattern = re.compile(rf"^{re.escape(slug)}__think(__\d{{8}}-\d{{6}})?\.json$")
+    slug = re.escape(slugify(model))
+    tag = re.escape(reasoning_tag(reasoning_mode, reasoning_value))
+    stamp = r"(__\d{8}-\d{6})?"
+    patterns = [rf"^{slug}__{tag}__\d{{8}}-\d{{6}}\.json$"]
+    if thinking_enabled(reasoning_mode, reasoning_value):
+        patterns.append(rf"^{slug}__think{stamp}\.json$")
     else:
-        pattern = re.compile(rf"^{re.escape(slug)}(__\d{{8}}-\d{{6}})?\.json$")
-    matches = [p for p in results_dir.glob(f"{slug}*.json") if pattern.match(p.name)]
+        patterns.append(rf"^{slug}{stamp}\.json$")
+    compiled = [re.compile(p) for p in patterns]
+    matches = [
+        p
+        for p in results_dir.glob(f"{slugify(model)}*.json")
+        if any(c.match(p.name) for c in compiled)
+    ]
     if not matches:
         return None
     return max(matches, key=lambda p: p.stat().st_mtime)
@@ -411,7 +427,7 @@ def print_summary(results, questions):
     n = len(questions)
     conds = list(CONDITIONS)
     acc = {}
-    print(f"\n=== Answers by condition (n={n}) ===")
+    print(f"\n=== Answers by condition (question_count={n}) ===")
     for cond in conds:
         present = [results.get(cond, {}).get(q["id"]) for q in questions]
         present = [e for e in present if e]
@@ -467,6 +483,11 @@ def parse_args(argv):
         description="OpenRouter-based persona experiment runner",
     )
     p.add_argument("--model", default=DEFAULT_MODEL)
+    p.add_argument(
+        "--questions-file",
+        default=None,
+        help="question JSON to run (default data/mmlu_pro_sample.json)",
+    )
     p.add_argument("--limit", type=int, default=None)
     p.add_argument("--workers", type=int, default=DEFAULT_WORKERS)
     p.add_argument("--max-tokens", type=int, default=DEFAULT_MAX_TOKENS)
@@ -499,18 +520,13 @@ def start_progress(total):
     return tqdm(total=total, desc="all calls", unit="call", dynamic_ncols=True)
 
 
-def update_progress(bar, entry, ok, fail, t0, done):
+def update_progress(bar, ok, fail, cost, t0, done):
     """Advance the overall bar after one call finishes."""
     if bar is None:
         return
-    if entry.get("error"):
-        last = "error"
-    else:
-        latency = entry.get("latency_s")
-        last = f"{latency:.1f}s" if latency else "-"
     elapsed = time.time() - t0
     rate = done / elapsed if elapsed > 0 else 0.0
-    bar.set_postfix_str(f"last={last} ok={ok} fail={fail} {rate:.2f}/s")
+    bar.set_postfix_str(f"ok={ok} fail={fail} ${cost:.4f} {rate:.2f}/s")
     bar.update(1)
 
 
@@ -537,8 +553,12 @@ def main(argv=None):
 
     think = thinking_enabled(reasoning_mode, reasoning_value)
     think_label = "on" if think else "off"
+    tag = reasoning_tag(reasoning_mode, reasoning_value)
 
-    with open(QUESTIONS_FILE) as f:
+    questions_file = Path(args.questions_file) if args.questions_file else QUESTIONS_FILE
+    if not questions_file.is_file():
+        raise SystemExit(f"questions file not found: {questions_file}")
+    with open(questions_file) as f:
         questions = json.load(f)
     if args.limit is not None:
         questions = questions[: args.limit]
@@ -559,12 +579,12 @@ def main(argv=None):
     if args.out:
         out_path = Path(args.out)
     elif args.resume:
-        out_path = latest_results_path(args.model, think)
+        out_path = latest_results_path(args.model, reasoning_mode, reasoning_value)
         if out_path is None:
             print(f"--resume: no existing results for {args.model}; starting a new run.")
-            out_path = output_path(args.model, think, stamp)
+            out_path = output_path(args.model, tag, stamp)
     else:
-        out_path = output_path(args.model, think, stamp)
+        out_path = output_path(args.model, tag, stamp)
 
     if args.dry_run:
         planned = n * len(CONDITIONS)
@@ -582,6 +602,7 @@ def main(argv=None):
         )
         print("=== DRY RUN (no network calls) ===")
         print(f"Model:            {args.model}")
+        print(f"Questions file:   {questions_file}")
         print(f"Questions:        {n}")
         print(f"Conditions:       {len(CONDITIONS)} ({', '.join(CONDITIONS)})")
         print(f"Planned calls:    {planned}")
@@ -644,9 +665,10 @@ def main(argv=None):
                 continue
             tasks.append((cond, q))
 
+    planned = n * len(CONDITIONS)
     print(
         f"Model: {args.model} [THINK {think_label} reasoning={reasoning_mode}:{reasoning_value}] | "
-        f"n={n} | {len(tasks)} tasks remaining | temp={args.temperature} | "
+        f"question_count={n} | {len(tasks)}/{planned} tasks remaining | temp={args.temperature} | "
         f"workers={args.workers} | max_tokens={args.max_tokens} | out={out_path}"
     )
 
@@ -671,6 +693,7 @@ def main(argv=None):
     total = len(tasks)
     ok = 0
     fail = 0
+    cost = 0.0
     consecutive_failures = 0
     remaining = iter(tasks)
     pending = {}
@@ -704,13 +727,13 @@ def main(argv=None):
                 else:
                     ok += 1
                     consecutive_failures = 0
-                update_progress(bar, entry, ok, fail, t0, done)
+                usage = entry.get("usage") or {}
+                if usage.get("cost") is not None:
+                    cost += usage["cost"]
+                update_progress(bar, ok, fail, cost, t0, done)
 
                 if done % SAVE_EVERY == 0 or done == total:
                     save(out_path, args.model, config, questions, results)
-                    elapsed = time.time() - t0
-                    rate = done / elapsed if elapsed > 0 else 0
-                    tqdm.write(f"  [{elapsed:5.0f}s] saved {done}/{total} ({rate:.2f}/s)")
 
                 if consecutive_failures >= MAX_CONSECUTIVE_FAILURES:
                     exit_code = 2
@@ -748,8 +771,8 @@ def main(argv=None):
     executor.shutdown(wait=True)
     save(out_path, args.model, config, questions, results)
     print(
-        f"\nModel: {args.model} [THINK] | MMLU-Pro sample n={n} | temp={args.temperature} | "
-        f"elapsed {time.time() - t0:.0f}s"
+        f"\nModel: {args.model} [THINK] | MMLU-Pro sample question_count={n} | "
+        f"temp={args.temperature} | elapsed {time.time() - t0:.0f}s"
     )
     print_summary(results, questions)
     return 0
