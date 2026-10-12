@@ -389,16 +389,13 @@ class TestProgress(unittest.TestCase):
         self.assertIsNone(rx.start_progress(0))
 
     def test_update_progress_none_bar_is_noop(self):
-        rx.update_progress(None, ok=1, fail=0, cost=0.0, t0=time.time(), done=1)
+        rx.update_progress(None, ok=1, fail=0, cost=0.0)
 
     def test_update_progress_advances_and_reports(self):
         bar = _FakeBar()
-        rx.update_progress(bar, ok=3, fail=1, cost=0.0123, t0=time.time() - 10, done=4)
+        rx.update_progress(bar, ok=3, fail=1, cost=0.0123)
         self.assertEqual(bar.advanced, 1)
-        self.assertIn("ok=3", bar.postfix)
-        self.assertIn("fail=1", bar.postfix)
-        self.assertIn("$0.0123", bar.postfix)
-        self.assertNotIn("last=", bar.postfix)
+        self.assertEqual(bar.postfix, "ok=3 fail=1 $0.0123")
 
     def test_close_progress_closes_and_ignores_none(self):
         bar = _FakeBar()

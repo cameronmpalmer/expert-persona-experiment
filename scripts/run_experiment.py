@@ -520,13 +520,15 @@ def start_progress(total):
     return tqdm(total=total, desc="all calls", unit="call", dynamic_ncols=True)
 
 
-def update_progress(bar, ok, fail, cost, t0, done):
-    """Advance the overall bar after one call finishes."""
+def update_progress(bar, ok, fail, cost):
+    """Advance the overall bar after one call finishes.
+
+    The rate is left to tqdm's own bar (it already prints calls/s), so the
+    postfix only adds the ok/fail counts and the cumulative cost.
+    """
     if bar is None:
         return
-    elapsed = time.time() - t0
-    rate = done / elapsed if elapsed > 0 else 0.0
-    bar.set_postfix_str(f"ok={ok} fail={fail} ${cost:.4f} {rate:.2f}/s")
+    bar.set_postfix_str(f"ok={ok} fail={fail} ${cost:.4f}")
     bar.update(1)
 
 
@@ -667,7 +669,7 @@ def main(argv=None):
 
     planned = n * len(CONDITIONS)
     print(
-        f"Model: {args.model} [THINK {think_label} reasoning={reasoning_mode}:{reasoning_value}] | "
+        f"Model: {args.model} [reasoning={reasoning_mode}:{reasoning_value}] | "
         f"question_count={n} | {len(tasks)}/{planned} tasks remaining | temp={args.temperature} | "
         f"workers={args.workers} | max_tokens={args.max_tokens} | out={out_path}"
     )
@@ -730,7 +732,7 @@ def main(argv=None):
                 usage = entry.get("usage") or {}
                 if usage.get("cost") is not None:
                     cost += usage["cost"]
-                update_progress(bar, ok, fail, cost, t0, done)
+                update_progress(bar, ok, fail, cost)
 
                 if done % SAVE_EVERY == 0 or done == total:
                     save(out_path, args.model, config, questions, results)
@@ -771,7 +773,7 @@ def main(argv=None):
     executor.shutdown(wait=True)
     save(out_path, args.model, config, questions, results)
     print(
-        f"\nModel: {args.model} [THINK] | MMLU-Pro sample question_count={n} | "
+        f"\nModel: {args.model} | MMLU-Pro sample question_count={n} | "
         f"temp={args.temperature} | elapsed {time.time() - t0:.0f}s"
     )
     print_summary(results, questions)

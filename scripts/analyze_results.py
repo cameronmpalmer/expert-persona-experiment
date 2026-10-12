@@ -92,7 +92,7 @@ def cond_stats(results, questions, cond):
 def change_matrix(results, cond):
     base = results.get("baseline", {})
     entries = results.get(cond, {})
-    m = {"changed": 0, "WtoR": 0, "RtoW": 0, "RtoR": 0, "WtoW": 0, "same": 0, "pairs": 0}
+    m = {"changed": 0, "WtoR": 0, "RtoW": 0, "WtoW": 0, "same": 0, "pairs": 0}
     for qid, e in entries.items():
         if qid not in base:
             continue
@@ -176,13 +176,13 @@ def render_summary(d):
 
     print()
     print("Answer changes vs baseline (answered pairs only):")
-    hdr2 = f"{'Condition':<11}{'Changed':>8}{'W->R':>7}{'R->W':>7}{'R->R':>7}{'W->W':>7}{'Same':>7}"
+    hdr2 = f"{'Condition':<11}{'Changed':>8}{'W->R':>7}{'R->W':>7}{'W->W':>7}{'Same':>7}"
     print(hdr2)
     print("-" * len(hdr2))
     for cond in order[1:]:
         m = change_matrix(results, cond)
         print(
-            f"{cond:<11}{m['changed']:>8}{m['WtoR']:>7}{m['RtoW']:>7}{m['RtoR']:>7}{m['WtoW']:>7}{m['same']:>7}"
+            f"{cond:<11}{m['changed']:>8}{m['WtoR']:>7}{m['RtoW']:>7}{m['WtoW']:>7}{m['same']:>7}"
         )
 
 
