@@ -45,12 +45,13 @@ def find_repo_root(start):
 
 ROOT = find_repo_root(Path(__file__).resolve().parent)
 DATA_DIR = ROOT / "data"
+SAMPLES_DIR = DATA_DIR / "question_samples"
 DEFAULT_INPUT = DATA_DIR / "mmlu_pro_test.parquet"
 
 
 def default_output(n):
-    """Default output file: data/mmlu_pro_sample_<n>.json (the count is in the name)."""
-    return DATA_DIR / f"mmlu_pro_sample_{n}.json"
+    """Default output file: data/question_samples/mmlu_pro_sample_<n>.json."""
+    return SAMPLES_DIR / f"mmlu_pro_sample_{n}.json"
 
 
 def parse_categories(spec):
@@ -114,7 +115,7 @@ def parse_args(argv):
         "-o",
         "--output",
         default=None,
-        help="output JSON file (default data/mmlu_pro_sample_<n>.json)",
+        help="output JSON file (default data/question_samples/mmlu_pro_sample_<n>.json)",
     )
     p.add_argument(
         "-y",

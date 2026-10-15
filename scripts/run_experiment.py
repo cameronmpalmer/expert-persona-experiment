@@ -62,7 +62,7 @@ API_URL = "https://openrouter.ai/api/v1/chat/completions"
 DEFAULT_MODEL = "inclusionai/ling-3.0-flash"
 
 ROOT = find_repo_root(Path(__file__).resolve().parent)
-QUESTIONS_FILE = ROOT / "data" / "mmlu_pro_sample_50.json"
+QUESTIONS_FILE = ROOT / "data" / "question_samples" / "mmlu_pro_sample_50.json"
 RESULTS_DIR = ROOT / "results"
 
 REQUEST_TIMEOUT = 180
@@ -72,9 +72,17 @@ DEFAULT_WORKERS = 20
 DEFAULT_MAX_TOKENS = 32768
 DEFAULT_TEMPERATURE = 0.0
 DEFAULT_SEED = 861
-DEFAULT_REASONING_EFFORT = "high"
+DEFAULT_REASONING_EFFORT = "none"
 REASONING_EFFORTS = ("none", "minimal", "low", "medium", "high", "xhigh")
 SAVE_EVERY = 10
+
+# Progress bar stability. tqdm's default smoothing (0.3) weights only the last
+# few completions, so with 20 calls in flight and heavy-tailed latencies the rate
+# and ETA lurch by roughly 4.6x between the 10th and 90th percentile. A smaller
+# smoothing factor gives the estimate a longer memory, and a slower refresh keeps
+# it readable.
+PROGRESS_SMOOTHING = 0.05
+PROGRESS_MININTERVAL = 0.5
 
 # Copied verbatim from the original scripts so results are comparable.
 CONDITIONS = {
@@ -88,6 +96,32 @@ USER_INSTRUCTION = (
     "Answer the following multiple-choice question. Reply with only the letter "
     "of the correct answer, e.g. 'A'. Do not include any explanation.\n\n"
 )
+
+
+def load_conditions(path):
+    """Load a {name: system_prompt} mapping from a JSON file.
+
+    Replaces CONDITIONS for this run. A "baseline" entry (empty system prompt)
+    is required so results stay comparable against a no-persona control. Insertion
+    order is preserved and used for the run order.
+    """
+    try:
+        with open(path) as f:
+            data = json.load(f)
+    except OSError as e:
+        raise SystemExit(f"could not read conditions file {path}: {e}") from e
+    except json.JSONDecodeError as e:
+        raise SystemExit(f"conditions file {path} is not valid JSON: {e}") from e
+    if not isinstance(data, dict) or not data:
+        raise SystemExit(f"conditions file must be a non-empty JSON object: {path}")
+    conditions = {}
+    for name, prompt in data.items():
+        if not isinstance(prompt, str):
+            raise SystemExit(f"condition {name!r} must map to a string system prompt")
+        conditions[name] = prompt
+    if "baseline" not in conditions:
+        raise SystemExit("conditions file must include a 'baseline' entry (empty prompt)")
+    return conditions
 
 
 def utc_now():
@@ -161,21 +195,14 @@ def latest_results_path(model, reasoning_mode, reasoning_value, results_dir=None
 
 
 def load_api_key():
-    """Read OPENROUTER_API_KEY from env, else the export line in ~/.bashrc.
+    """Read OPENROUTER_API_KEY_PROJECT from env.
 
     The key is never printed or logged.
     """
-    key = os.environ.get("OPENROUTER_API_KEY", "").strip()
+    key = os.environ.get("OPENROUTER_API_KEY_PROJECT", "").strip()
     if key:
         return key
-    bashrc = os.path.expanduser("~/.bashrc")
-    if os.path.exists(bashrc):
-        with open(bashrc) as f:
-            for line in f:
-                m = re.match(r"\s*export\s+OPENROUTER_API_KEY\s*=\s*['\"]?([^'\"]+)", line)
-                if m:
-                    return m.group(1).strip()
-    raise SystemExit("OPENROUTER_API_KEY not found in env or ~/.bashrc")
+    raise SystemExit("OPENROUTER_API_KEY_PROJECT not found in env or ~/.bashrc")
 
 
 def build_user_message(question, options):
@@ -410,7 +437,7 @@ def run_task(
     }
 
 
-def save(out_path, model, config, questions, results):
+def save(out_path, model, config, questions, results, conditions=CONDITIONS):
     out_path = Path(out_path)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     doc = {
@@ -418,7 +445,7 @@ def save(out_path, model, config, questions, results):
         "api": "openrouter",
         "config": config,
         "questions": questions,
-        "conditions": CONDITIONS,
+        "conditions": conditions,
         "results": results,
     }
     tmp = out_path.with_name(out_path.name + ".tmp")
@@ -427,9 +454,9 @@ def save(out_path, model, config, questions, results):
     os.replace(tmp, out_path)
 
 
-def print_summary(results, questions):
+def print_summary(results, questions, conditions=CONDITIONS):
     n = len(questions)
-    conds = list(CONDITIONS)
+    conds = list(conditions)
     acc = {}
     print(f"\n=== Answers by condition (question_count={n}) ===")
     for cond in conds:
@@ -490,7 +517,7 @@ def parse_args(argv):
     p.add_argument(
         "--questions-file",
         default=None,
-        help="question JSON to run (default data/mmlu_pro_sample_50.json)",
+        help="question JSON to run (default data/question_samples/mmlu_pro_sample_50.json)",
     )
     p.add_argument("--limit", type=int, default=None)
     p.add_argument("--workers", type=int, default=DEFAULT_WORKERS)
@@ -509,6 +536,11 @@ def parse_args(argv):
         action="store_true",
         help="resume the most recent results file for this model",
     )
+    p.add_argument(
+        "--conditions-file",
+        default=None,
+        help="JSON {name: system_prompt} mapping to run instead of the default conditions",
+    )
     p.add_argument("--dry-run", action="store_true")
     p.add_argument("--force", action="store_true")
     return p.parse_args(argv)
@@ -521,18 +553,27 @@ def start_progress(total):
     """
     if not total:
         return None
-    return tqdm(total=total, desc="all calls", unit="call", dynamic_ncols=True)
+    return tqdm(
+        total=total,
+        desc="all calls",
+        unit="call",
+        dynamic_ncols=True,
+        smoothing=PROGRESS_SMOOTHING,
+        mininterval=PROGRESS_MININTERVAL,
+    )
 
 
 def update_progress(bar, ok, fail, cost):
     """Advance the overall bar after one call finishes.
 
-    The rate is left to tqdm's own bar (it already prints calls/s), so the
-    postfix only adds the ok/fail counts and the cumulative cost.
+    The rate is left to tqdm, so the postfix only adds the ok/fail counts and
+    cumulative cost. The postfix is set without forcing a refresh
+    (`refresh=False`): tqdm's own mininterval decides when to redraw, and an
+    unthrottled redraw on every completion was part of what made the bar jumpy.
     """
     if bar is None:
         return
-    bar.set_postfix_str(f"ok={ok} fail={fail} ${cost:.4f}")
+    bar.set_postfix_str(f"ok={ok} fail={fail} ${cost:.4f}", refresh=False)
     bar.update(1)
 
 
@@ -560,6 +601,8 @@ def main(argv=None):
     think = thinking_enabled(reasoning_mode, reasoning_value)
     think_label = "on" if think else "off"
     tag = reasoning_tag(reasoning_mode, reasoning_value)
+
+    conditions = load_conditions(args.conditions_file) if args.conditions_file else CONDITIONS
 
     questions_file = Path(args.questions_file) if args.questions_file else QUESTIONS_FILE
     if not questions_file.is_file():
@@ -593,11 +636,11 @@ def main(argv=None):
         out_path = output_path(args.model, n, tag, stamp)
 
     if args.dry_run:
-        planned = n * len(CONDITIONS)
-        example_cond = "expert" if "expert" in CONDITIONS else next(iter(CONDITIONS))
+        planned = n * len(conditions)
+        example_cond = "expert" if "expert" in conditions else next(iter(conditions))
         example_payload = build_payload(
             args.model,
-            CONDITIONS[example_cond],
+            conditions[example_cond],
             build_user_message(questions[0]["question"], questions[0]["options"]),
             args.temperature,
             args.max_tokens,
@@ -610,7 +653,7 @@ def main(argv=None):
         print(f"Model:            {args.model}")
         print(f"Questions file:   {questions_file}")
         print(f"Questions:        {n}")
-        print(f"Conditions:       {len(CONDITIONS)} ({', '.join(CONDITIONS)})")
+        print(f"Conditions:       {len(conditions)} ({', '.join(conditions)})")
         print(f"Planned calls:    {planned}")
         print(
             f"Reasoning:        mode={reasoning_mode} value={reasoning_value} "
@@ -623,7 +666,7 @@ def main(argv=None):
 
     api_key = load_api_key()
 
-    results = {cond: {} for cond in CONDITIONS}
+    results = {cond: {} for cond in conditions}
     existing = None
     if out_path.exists():
         try:
@@ -664,14 +707,17 @@ def main(argv=None):
         already = sum(len(v) for v in results.values())
         print(f"Resuming: {already} entries already done")
 
+    # Question-major order interleaves every condition across the run, so a slow
+    # stretch of provider load hits all conditions rather than whichever one ran
+    # last. That keeps latency comparisons fair instead of confounded by drift.
     tasks = []
-    for cond in CONDITIONS:
-        for q in questions:
+    for q in questions:
+        for cond in conditions:
             if q["id"] in results[cond]:
                 continue
             tasks.append((cond, q))
 
-    planned = n * len(CONDITIONS)
+    planned = n * len(conditions)
     print(
         f"Model: {args.model} [reasoning={reasoning_mode}:{reasoning_value}] | "
         f"question_count={n} | {len(tasks)}/{planned} tasks remaining | temp={args.temperature} | "
@@ -684,7 +730,7 @@ def main(argv=None):
             api_key,
             args.model,
             q,
-            CONDITIONS[cond],
+            conditions[cond],
             max_tokens=args.max_tokens,
             temperature=args.temperature,
             seed=args.seed,
@@ -739,7 +785,7 @@ def main(argv=None):
                 update_progress(bar, ok, fail, cost)
 
                 if done % SAVE_EVERY == 0 or done == total:
-                    save(out_path, args.model, config, questions, results)
+                    save(out_path, args.model, config, questions, results, conditions)
 
                 if consecutive_failures >= MAX_CONSECUTIVE_FAILURES:
                     exit_code = 2
@@ -755,7 +801,7 @@ def main(argv=None):
     if exit_code:
         # Stop scheduling immediately; cancel anything still queued rather than
         # waiting for up to a full queue of slow calls.
-        save(out_path, args.model, config, questions, results)
+        save(out_path, args.model, config, questions, results, conditions)
         executor.shutdown(wait=False, cancel_futures=True)
         if exit_code == 2:
             print(
@@ -775,12 +821,12 @@ def main(argv=None):
         os._exit(exit_code)
 
     executor.shutdown(wait=True)
-    save(out_path, args.model, config, questions, results)
+    save(out_path, args.model, config, questions, results, conditions)
     print(
         f"\nModel: {args.model} | MMLU-Pro sample question_count={n} | "
         f"temp={args.temperature} | elapsed {time.time() - t0:.0f}s"
     )
-    print_summary(results, questions)
+    print_summary(results, questions, conditions)
     return 0
 
 

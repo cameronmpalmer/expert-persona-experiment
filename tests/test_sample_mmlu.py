@@ -71,7 +71,7 @@ class TestBuildSample(unittest.TestCase):
 class TestDefaultOutput(unittest.TestCase):
     def test_name_includes_the_count(self):
         self.assertEqual(sm.default_output(100).name, "mmlu_pro_sample_100.json")
-        self.assertEqual(sm.default_output(44), sm.DATA_DIR / "mmlu_pro_sample_44.json")
+        self.assertEqual(sm.default_output(44), sm.SAMPLES_DIR / "mmlu_pro_sample_44.json")
 
 
 class TestConfirmWrite(unittest.TestCase):

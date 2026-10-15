@@ -1,28 +1,44 @@
 # Persona Experiment
 
-A mini replication of **"Playing Pretend: Expert Personas Don't Improve Factual Accuracy"**
-(Prompting Science Report 4, Wharton GAIL Generative AI Lab; [arXiv:2512.05858](https://arxiv.org/abs/2512.05858)).
+A mini replication of **"Playing Pretend: Expert Personas Don't Improve Factual
+Accuracy"** (Prompting Science Report 4, Wharton GAIL; [arXiv:2512.05858](https://arxiv.org/abs/2512.05858)),
+plus a follow-up on what expert instructions cost.
 
-**Question:** does telling a model it is an expert make it answer more accurately?
-**Answer (this experiment):** no. Personas change behavior, not capability.
+**Question:** does telling a model it is an expert make it answer more accurately,
+and what does it cost?
+**Answer so far:** no accuracy gain. With reasoning on, expert instructions also
+spend more tokens (and therefore more money and time). Low-knowledge personas both
+cost more and hurt accuracy.
 
-The results below are from the original local Ollama runs (`qwen3.5:9b`,
-`qwen3.5:0.8b`). The experiment now runs through `scripts/run_experiment.py`
-against OpenRouter models with configurable thinking; see [Usage](#usage).
+The work is split into two phases:
+
+- **Phase 1** - the original four-condition replication: `baseline`, `expert`,
+  `layperson`, `toddler`.
+- **Phase 2** - expert-instruction variants: `baseline`, `neutral` (length-matched
+  non-expert control), `expert_short`, `expert` (the phase 1 generic prompt),
+  `expert_long`.
 
 ## Method
 
-- **Benchmark:** 44 graduate-level questions sampled from the MMLU-Pro test set
-  (science, engineering, law, economics, math, history, biology, chemistry,
-  physics), seeded and reproducible (`seed=42`). Committed at
-  `data/mmlu_pro_sample.json`.
-- **Models:** `qwen3.5:9b` and `qwen3.5:0.8b` via Ollama for the results below
-  (temperature 0, thinking disabled). The current runner defaults to
-  `inclusionai/ling-3.1-flash` on OpenRouter with thinking enabled.
-- **Design:** paired — every question is answered under all four conditions, so
-  any accuracy difference is attributable to the system prompt.
+- **Benchmark:** graduate-level questions sampled from the MMLU-Pro test set
+  (physics, chemistry, biology, computer science, engineering, math, economics,
+  law, history), seeded and reproducible (`seed=42`). Samples live in
+  `data/question_samples/mmlu_pro_sample_<n>.json` for n in 50, 100, 500, 1000,
+  2000, 5000; the runner defaults to the 50-question rung.
+- **Models:** the current runner defaults to `inclusionai/ling-3.0-flash` via
+  OpenRouter, thinking off by default (pass `--reasoning-effort` to enable). The
+  earliest results below come from local Ollama runs (`qwen3.5:9b`,
+  `qwen3.5:0.8b`, temperature 0, thinking disabled).
+- **Design:** paired, so every question is answered under every condition and any
+  difference is attributable to the system prompt. Conditions are the built-in
+  four unless `--conditions-file` supplies another set.
+- **Outcomes:** answer accuracy, plus token usage (prompt, completion, reasoning).
+  Cost is tokens times price and speed is tokens per unit time, so tokens are the
+  underlying quantity recorded for every call.
 
 ### Conditions
+
+Built-in (phase 1):
 
 | Condition | System prompt |
 |---|---|
@@ -31,9 +47,50 @@ against OpenRouter models with configurable thinking; see [Usage](#usage).
 | layperson | "You are a layperson with no specialized training in any technical or academic subject." |
 | toddler | "You are a toddler. You are still learning the basics of the world and have almost no knowledge of science, engineering, law, or mathematics." |
 
+Phase 2 (`data/condition_variants/phase_2_conditions_expert_variants.json`), with
+measured system-prompt lengths:
+
+| Condition | System prompt tokens |
+|---|---|
+| baseline | 0 |
+| neutral | 38 |
+| expert_short | 6 ("You are an expert.") |
+| expert | 39 (same prompt as phase 1) |
+| expert_long | 72 |
+
+The neutral control is a non-expert instruction of the same length as the expert
+prompt, so any difference between them reflects content rather than length.
+
 ## Results
 
-### Accuracy by condition (44 questions)
+**Phase 2 (expert wording variants) has not been run yet.** Its conditions are in
+`data/condition_variants/phase_2_conditions_expert_variants.json` and `results/phase2/`
+is empty. The results below are phase 1 and the original local runs.
+
+### Phase 1 on OpenRouter, 5,000 questions
+
+Reasoning off (`--reasoning-effort none`): accuracy is flat across conditions
+(59.8%, 59.7%, 59.2%, 59.8% for baseline, expert, layperson, toddler; all
+McNemar p >= 0.07), and because completions are about two tokens the conditions
+cost the same. Nothing to separate.
+
+Reasoning on (`--reasoning-effort xhigh`), 5,000 questions:
+
+| Condition | Accuracy | Net vs baseline | Reasoning tokens | Token ratio | Total cost |
+|---|---|---|---|---|---|
+| baseline | 82.0% | - | 2152 | 1.00 | $1.03 |
+| expert | 81.6% | -0.4pp (p=0.31) | 2595 | 1.21 [1.16, 1.25] | $1.20 |
+| layperson | 81.4% | -0.6pp (p=0.08) | 2294 | 1.07 [1.03, 1.10] | $1.09 |
+| toddler | 81.0% | -0.9pp (p=0.01) | 2306 | 1.07 [1.03, 1.11] | $1.09 |
+
+Read this as: the expert persona buys no accuracy and costs about 17% more, almost
+entirely extra reasoning tokens (mean +443 per call, median only +22, so the mean
+is tail-driven). The low-knowledge personas cost a little more and lose accuracy,
+and the toddler loss is significant. The effect sizes are not fully stable across
+runs of different size, so treat the token penalty as "real in direction, roughly
+7 to 17% in magnitude".
+
+### Original local Ollama replication (44 questions)
 
 | Condition | qwen3.5:9b | qwen3.5:0.8b |
 |---|---|---|
@@ -42,63 +99,60 @@ against OpenRouter models with configurable thinking; see [Usage](#usage).
 | layperson | 18/44 (41%) | 9/44 (20%) |
 | toddler | 18/44 (41%) | 8/44 (18%) |
 
-### Deltas vs baseline
+Across both models and 88 answers the expert persona's net accuracy effect was
+zero; the low-knowledge personas lowered accuracy. Archived under `results/old/`.
+These runs used a 44-question sample that is no longer committed; the current
+sample ladder starts at 50.
 
-| Condition | qwen3.5:9b | qwen3.5:0.8b |
-|---|---|---|
-| expert | +2pp | −3pp |
-| layperson | −2pp | −3pp |
-| toddler | −2pp | −5pp |
+### Caveats
 
-### Interpretation
-
-- On the 9b model, the "world-class expert who never makes mistakes" prompt
-  changed answers on **5 of 44** questions and flipped exactly **1** from wrong
-  to right. The model was still wrong on 24 of 44.
-- On the 0.8b model, the same expert prompt **broke two previously-correct
-  answers** and lowered accuracy by 3pp.
-- Across both models and 88 question-answers, the expert persona's net effect
-  on accuracy was **zero**.
-- Personas are not inert: the toddler persona changed 12 answers on the 9b
-  model and broke two answers that had been correct (Q27, Q30). Negative-
-  capability personas actively degrade performance, matching the study.
-- The direction matches the original study: expert personas do not improve
-  factual accuracy; low-knowledge personas can hurt it.
-
-### Caveats (read before citing)
-
-- Small sample (44 questions, single seeded draw), single run per condition,
-  temperature 0. The ±2-5pp deltas are within noise at this n.
-- Results are for accuracy of answers only. Personas can legitimately change
-  tone, style, and formatting — the study's explicit caveat.
-- Local 9b/0.8b models are far below frontier capability; the absolute scores
-  are not the point, the persona effect (or lack of it) is.
+- Single model and single provider (OpenRouter, usually Novita), one seeded draw
+  per run, temperature 0. Run-to-run token use varies, so the cost magnitude is
+  approximate.
+- Token effects are heavy-tailed: the mean increase is much larger than the median
+  for the same condition.
+- Latency is logged but is confounded by run order and provider load, so it is not
+  a clean speed measurement.
+- Results are about answer accuracy and token use. Personas can still change tone,
+  style, and formatting, which this does not measure.
 
 ## Usage
 
-Requires Python 3.14 and [uv](https://docs.astral.sh/uv/). Build the environment:
+Requires Python 3.14 and [uv](https://docs.astral.sh/uv/):
 
 ```bash
 make setup        # uv sync
 ```
 
-### Run the experiment
+### API key
 
-`scripts/run_experiment.py` runs the four conditions over the sample against
-OpenRouter. It reads `OPENROUTER_API_KEY` from the environment or `~/.bashrc`.
+`scripts/run_experiment.py` reads `OPENROUTER_API_KEY_PROJECT` from the
+environment. The repo ships a git-ignored `.env`; load it before running:
+
+```bash
+set -a; . ./.env; set +a
+```
+
+### Run the experiment
 
 ```bash
 # plan only, no network calls
 .venv/bin/python scripts/run_experiment.py --dry-run --limit 2
 
-# smoke test: 5 questions x 4 conditions = 20 calls
-.venv/bin/python scripts/run_experiment.py --limit 5 --workers 8
+# phase 1 smoke test: 5 questions x 4 conditions = 20 calls
+.venv/bin/python scripts/run_experiment.py --limit 5
 
-# full run: 44 questions x 4 conditions = 176 calls
-.venv/bin/python scripts/run_experiment.py --workers 8
+# phase 1 full run on the 50-question sample, reasoning off (the default)
+.venv/bin/python scripts/run_experiment.py
 
-# thinking off
-.venv/bin/python scripts/run_experiment.py --reasoning-effort none
+# phase 1 with reasoning on
+.venv/bin/python scripts/run_experiment.py --reasoning-effort xhigh
+
+# phase 2: expert wording variants, 5,000 questions, reasoning on
+.venv/bin/python scripts/run_experiment.py \
+  --questions-file data/question_samples/mmlu_pro_sample_5000.json \
+  --conditions-file data/condition_variants/phase_2_conditions_expert_variants.json \
+  --reasoning-effort xhigh
 
 # continue the most recent run for this model
 .venv/bin/python scripts/run_experiment.py --resume
@@ -109,78 +163,116 @@ Options:
 | Option | Default | Meaning |
 |---|---|---|
 | `--model` | `inclusionai/ling-3.0-flash` | OpenRouter model slug |
-| `--questions-file` | `data/mmlu_pro_sample.json` | question JSON to run |
-| `--limit N` | all 44 | first N questions (N x 4 calls) |
-| `--workers N` | 8 | calls in flight at once |
+| `--questions-file` | `data/question_samples/mmlu_pro_sample_50.json` | question JSON to run |
+| `--limit N` | all 50 | first N questions (N x conditions calls) |
+| `--workers N` | 20 | calls in flight at once |
 | `--max-tokens N` | 32768 | completion budget (thinking plus answer) |
-| `--reasoning-effort` | `high` | `none`, `minimal`, `low`, `medium`, `high`, `xhigh`; `none` disables thinking |
+| `--reasoning-effort` | `none` | `none`, `minimal`, `low`, `medium`, `high`, `xhigh`; `none` disables thinking |
 | `--reasoning-max-tokens N` | none | cap reasoning tokens instead of setting an effort |
 | `--provider` | any | pin a specific upstream provider |
 | `--temperature` / `--seed` | `0.0` / `861` | sampling |
 | `--out FILE` / `--resume` | none | write an explicit file, or continue the newest run for the model (mutually exclusive) |
+| `--conditions-file FILE` | the built-in four | JSON `{name: system_prompt}` mapping to run instead of the defaults |
 | `--dry-run` / `--force` | off | plan only / override the resume-compatibility check |
 
-Each run writes one file named for its question count, reasoning level, and
-start time (UTC): `results/{slug}__{count}q__{reasoning}__{timestamp}.json`,
-where `{count}` is the number of questions and `{reasoning}` is the effort level
-(`none`, `high`, and so on) or `maxtokens{N}` for the max-tokens mode.
-`results/` is git-ignored, so outputs stay local.
+Tasks are scheduled question-major, so all conditions run interleaved across a run
+rather than in contiguous blocks. That keeps latency from being confounded with
+provider load drifting over time.
 
-The runner retries 429/5xx responses with backoff (5 attempts), saves every 10
-calls, aborts after 3 consecutive failures (exit 2), and on Ctrl-C saves and
-exits 130. A live progress bar shows overall and per-condition progress, rate,
-and the running fail count. Empty or truncated answers are recorded as
-non-answers and never retried.
+Output: each run writes one file named for its question count, reasoning level, and
+start time (UTC): `results/{slug}__{count}q__{reasoning}__{timestamp}.json`, where
+`{reasoning}` is the effort level (`none`, `high`, ...) or `maxtokens{N}`. `results/`
+is git-ignored. Phase 1 results are kept in `results/phase1/` and phase 2 in
+`results/phase2/`; write there with `--out results/phase2/<name>.json`.
+
+Behavior: retries 429/5xx and network errors with backoff (5 attempts, 180s
+timeout), saves every 10 calls, aborts after 3 consecutive failures (exit 2), and
+on Ctrl-C saves and exits 130. A single progress bar shows calls done, failures,
+and cumulative cost. Empty or truncated answers are recorded as non-answers and
+never retried.
 
 ### Workers
 
-`--workers` is the number of calls in flight (default 8). The right value is
-provider-bound and has not been tuned for `ling-3.1-flash`, which rate-limits
-intermittently (429s) on its upstream pool. Start at 8 and raise it while the
-progress bar's fail count stays flat.
+`--workers` is the number of calls in flight (default 20). The right value is
+provider-bound; start at 20 and raise it while the progress bar's fail count stays
+flat. `ling-3.0-flash` serves from a small provider pool and can rate-limit, so
+watch for 429 backoff.
 
 ### Analyze results
 
 ```bash
-.venv/bin/python scripts/analyze_results.py results/<file>.json              # summary
-.venv/bin/python scripts/analyze_results.py results/<file>.json --questions  # per question
-.venv/bin/python scripts/analyze_results.py results/<file>.json --categories # by MMLU category
-.venv/bin/python scripts/analyze_results.py results/<file>.json --reasoning  # reasoning stats
-.venv/bin/python scripts/analyze_results.py A.json B.json --compare          # side by side
+.venv/bin/python scripts/analyze_results.py results/<file>.json                 # summary
+.venv/bin/python scripts/analyze_results.py results/<file>.json --questions     # per question
+.venv/bin/python scripts/analyze_results.py results/<file>.json --categories    # by MMLU category
+.venv/bin/python scripts/analyze_results.py results/<file>.json --reasoning     # reasoning stats
+.venv/bin/python scripts/analyze_results.py A.json B.json --compare             # side by side
+.venv/bin/python scripts/analyze_results.py results/<file>.json --json          # machine-readable
+.venv/bin/python scripts/analyze_results.py results/<file>.json --format-errors out.tsv
+.venv/bin/python scripts/analyze_results.py results/<file>.json --credit-format-errors
+.venv/bin/python scripts/analyze_results.py results/<file>.json --no-significance
 ```
 
-Views combine, and `--json` emits a machine-readable summary. Partial
-(in-progress) files are handled, and non-answers (`?`) are counted separately
-from wrong answers.
+Views combine; `--json` suppresses the text views, and partial (in-progress) files
+are handled. The summary prints, in order:
+
+- **Counts and accuracy** per condition: `Correct`, `Wrong`, `Blank`, `FmtErr`,
+  `Missing`, `Acc(ans)` (answered only), `Acc(all)`, and `Cost`.
+- **Total cost** across conditions.
+- **Token usage vs baseline:** mean prompt, completion, and reasoning tokens, the
+  `R med` column (median reasoning tokens, far below the mean because these counts
+  are skewed), the mean deltas (`dPrompt`, `dCompl`, `dReason`), `dR med` (median
+  of the per-question reasoning differences), and the reasoning-token ratio with a
+  95% interval and a p-value. The interval is a delta-method interval on the log
+  ratio; the p-value is the exact sign test on the per-question differences. With
+  reasoning off the reasoning columns are zero and the ratio and p-value show `n/a`.
+- **Paired significance:** each condition against baseline with the exact McNemar
+  test on discordant pairs, showing `Fixed`, `Broke`, the discordant total, the net
+  difference in percentage points, a 95% interval, and p. This is the only place the
+  per-condition net is reported; the old standalone deltas line was removed because
+  it duplicated this column. Printed by default; `--no-significance` hides it, and
+  `--json` carries it under `paired_vs_baseline`.
+- **Answer changes vs baseline** (answered pairs only): `Changed`, `W->R`, `R->W`,
+  `W->W`, `Same`.
+
+Entries that name no option are split two ways. `Blank` means the completion field
+is empty (often a truncated `finish_reason: length` call). `FmtErr` means the
+completion is non-blank but holds no option letter, for example `2.5 gallons`.
+Both are kept out of wrong answers.
+
+`--format-errors OUT` dumps every `FmtErr` row to a tab-separated file with
+columns condition, id, category, gold, the raw reply, `regex_letter`,
+`would_be_correct`, finish reason, provider, reasoning tokens, and the question.
+The last two of those match the reply against the option texts by word-boundary
+regex after lowercasing and stripping LaTeX, so `3.54 eV` matches an option written
+`3.54 $\mathrm{eV}$`, `100` does not match inside `1000`, and `8.0` does not match
+inside `18.0`. It is a heuristic, not a parser.
+
+`--credit-format-errors` applies that match to scoring: a format error whose reply
+matches the gold option counts as correct. The summary adds a `Credit` column and
+a scoring banner, the per-category table follows the same rule, and `--json` adds a
+`credit_format_errors` flag and a per-condition `credited` count.
 
 ### Regenerate the question sample
 
-`scripts/sample_mmlu.py` samples from a parquet and writes the question JSON.
-The default output name carries the count (`data/mmlu_pro_sample_<n>.json`) so it
-does not overwrite the committed `data/mmlu_pro_sample.json` the runner reads,
-and it confirms before writing (`--yes` skips the prompt):
+`scripts/sample_mmlu.py` samples from the parquet and writes the question JSON. Its
+default count is 44, and the default output name carries the count
+(`data/question_samples/mmlu_pro_sample_<n>.json`) so a new rung does not overwrite
+an existing one, and it confirms before writing (`--yes` skips the prompt):
 
 ```bash
-# reproduce the committed sample (study categories, seed=42, 44 questions)
-.venv/bin/python scripts/sample_mmlu.py
+# write the 50-question rung the runner reads by default
+.venv/bin/python scripts/sample_mmlu.py --n 50 --yes
 
-# write straight to the file the runner reads
-.venv/bin/python scripts/sample_mmlu.py -o data/mmlu_pro_sample.json --yes
-```
-
-For another dataset, pass the paths, count, seed, and categories, and remap the
-column names (defaults match the MMLU-Pro schema):
-
-```bash
+# another dataset: custom paths, count, seed, categories, and column names
 .venv/bin/python scripts/sample_mmlu.py \
   --input /path/to/other.parquet --output /path/to/sample.json \
   --n 100 --seed 7 --categories all --yes
 ```
 
-`--categories all` skips category filtering; a comma list keeps only those
-categories (for example `--categories math,physics`). `--question-col`,
-`--options-col`, `--answer-col`, and `--category-col` map the source columns,
-and the answer column must hold a 0-based index into the options.
+`--categories all` skips filtering; a comma list keeps only those (for example
+`--categories math,physics`). `--question-col`, `--options-col`, `--answer-col`,
+and `--category-col` map the source columns; the answer column must hold a 0-based
+index into the options. The default input is `data/mmlu_pro_test.parquet`.
 
 ## Development
 
@@ -188,26 +280,33 @@ and the answer column must hold a 0-based index into the options.
 make                # list targets
 make setup          # create/sync the .venv (uv sync)
 make test           # unit tests with coverage
-make coverage-html  # HTML coverage report in htmlcov/
 make lint           # ruff check
 make format         # ruff format
-make check          # lint + test
-make precommit      # format-check + lint + test
-make install-hooks  # enable the tracked .githooks/pre-commit hook
+make format-noedit  # verify formatting without writing
+make precommit      # format-noedit + lint + test (run by the git hook)
+make install-hooks  # point git at the tracked .githooks/pre-commit
+make clean          # remove caches
 ```
 
-Tests live in `tests/` (stdlib `unittest`, executed under `coverage`).
+The Makefile header also mentions `check` and `coverage-html`; those two are not
+actually defined, so use `precommit` and `coverage` directly. Tests live in
+`tests/` (stdlib `unittest`, run under `coverage`).
 
 ## Files
 
-- `scripts/run_experiment.py`: OpenRouter runner for the four-condition protocol
-- `scripts/analyze_results.py`: CLI analysis of results files (summary, deltas, per-question, per-category, reasoning stats, compare, `--json`)
+- `scripts/run_experiment.py`: OpenRouter runner (built-in four conditions;
+  `--conditions-file` for phase 2 sets)
+- `scripts/analyze_results.py`: CLI analysis (summary, tokens, significance,
+  per-question, per-category, reasoning stats, compare, format-error dump, `--json`)
 - `scripts/sample_mmlu.py`: seeded sampler from the MMLU-Pro parquet (needs pyarrow)
-- `data/mmlu_pro_sample.json`: the 44 questions used
-- `tests/test_run_experiment.py`: unit tests for the runner
-- `Makefile`: developer tasks (test, lint, format, coverage, hooks)
-- `results/`: run outputs (git-ignored); the original local result files are archived in `results/old/`
+- `data/question_samples/`: the question samples (`mmlu_pro_sample_<n>.json`)
+- `data/condition_variants/`: phase 2 condition sets
+- `data/mmlu_pro_test.parquet`: source parquet (git-ignored)
+- `results/old/`: original local Ollama runs
+- `results/phase1/`: phase 1 OpenRouter runs
+- `results/phase2/`: phase 2 runs (empty so far)
+- `tests/`: unit tests for the runner, sampler, and analyzer
+- `Makefile`, `pyproject.toml`: tasks and project/config
 
-The original local runner (`experiment.py`) and the earlier cloud script
-(`experiment_openrouter_think.py`) have been replaced by
-`scripts/run_experiment.py`, which also absorbed the OpenRouter re-run.
+The original local runner (`experiment.py`) and earlier cloud script
+(`experiment_openrouter_think.py`) have been replaced by `scripts/run_experiment.py`.

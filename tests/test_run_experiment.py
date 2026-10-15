@@ -1,16 +1,53 @@
 """Unit tests for scripts/run_experiment.py. No network access."""
 
 import importlib.util
+import json
 import os
 import tempfile
 import time
 import unittest
 from pathlib import Path
+from unittest import mock
 
 _SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "run_experiment.py"
 _SPEC = importlib.util.spec_from_file_location("run_experiment", _SCRIPT)
 rx = importlib.util.module_from_spec(_SPEC)
 _SPEC.loader.exec_module(rx)
+
+
+class TestLoadConditions(unittest.TestCase):
+    def _write(self, tmp, obj):
+        p = Path(tmp) / "conds.json"
+        p.write_text(json.dumps(obj))
+        return str(p)
+
+    def test_loads_mapping(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._write(tmp, {"baseline": "", "expert": "You are an expert."})
+            conds = rx.load_conditions(path)
+            self.assertEqual(conds, {"baseline": "", "expert": "You are an expert."})
+
+    def test_requires_baseline(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._write(tmp, {"expert": "You are an expert."})
+            with self.assertRaises(SystemExit):
+                rx.load_conditions(path)
+
+    def test_rejects_non_string_prompt(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._write(tmp, {"baseline": "", "expert": ["not", "a", "string"]})
+            with self.assertRaises(SystemExit):
+                rx.load_conditions(path)
+
+    def test_rejects_non_dict(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._write(tmp, ["baseline"])
+            with self.assertRaises(SystemExit):
+                rx.load_conditions(path)
+
+    def test_rejects_missing_file(self):
+        with self.assertRaises(SystemExit):
+            rx.load_conditions("/nonexistent/conds.json")
 
 
 class TestParseLetter(unittest.TestCase):
@@ -67,7 +104,7 @@ class TestModelSlugAndPaths(unittest.TestCase):
         self.assertEqual(rx.run_stamp(when), "20261012-153000")
 
     def test_questions_file_is_a_sample_under_repo_data(self):
-        self.assertEqual(rx.QUESTIONS_FILE.parent, rx.ROOT / "data")
+        self.assertEqual(rx.QUESTIONS_FILE.parent, rx.ROOT / "data" / "question_samples")
         self.assertTrue(rx.QUESTIONS_FILE.name.startswith("mmlu_pro_sample"))
 
 
@@ -374,11 +411,13 @@ class TestRunTask(unittest.TestCase):
 class _FakeBar:
     def __init__(self):
         self.postfix = None
+        self.refresh = None
         self.advanced = 0
         self.closed = False
 
-    def set_postfix_str(self, s):
+    def set_postfix_str(self, s, refresh=True):
         self.postfix = s
+        self.refresh = refresh
 
     def update(self, n):
         self.advanced += n
@@ -390,6 +429,27 @@ class _FakeBar:
 class TestProgress(unittest.TestCase):
     def test_no_work_returns_no_bar(self):
         self.assertIsNone(rx.start_progress(0))
+
+    def test_start_progress_uses_stable_settings(self):
+        captured = {}
+
+        def fake_tqdm(**kwargs):
+            captured.update(kwargs)
+            return "BAR"
+
+        with mock.patch.object(rx, "tqdm", fake_tqdm):
+            bar = rx.start_progress(10)
+        self.assertEqual(bar, "BAR")
+        self.assertEqual(captured["total"], 10)
+        self.assertEqual(captured["smoothing"], rx.PROGRESS_SMOOTHING)
+        self.assertEqual(captured["mininterval"], rx.PROGRESS_MININTERVAL)
+        # Calmer than tqdm's default (0.3), which swings with bursty completions.
+        self.assertLess(captured["smoothing"], 0.3)
+
+    def test_update_progress_does_not_force_refresh(self):
+        bar = _FakeBar()
+        rx.update_progress(bar, ok=1, fail=0, cost=0.0)
+        self.assertIs(bar.refresh, False)
 
     def test_update_progress_none_bar_is_noop(self):
         rx.update_progress(None, ok=1, fail=0, cost=0.0)
