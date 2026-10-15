@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """OpenRouter runner for the "Playing Pretend" persona experiment.
 
-Runs the existing four-condition system-prompt protocol (baseline / expert /
-layperson / toddler) over a 44-question MMLU-Pro sample against OpenRouter.
+Runs a system-prompt condition set (baseline / expert / layperson / toddler by
+default, or a custom set via --conditions-file) over an MMLU-Pro sample against
+OpenRouter.
 
 Design notes:
   - each entry captures usage, cost, finish_reason, provider, the model the
@@ -12,12 +13,12 @@ Design notes:
     pyproject.toml, so it always reads data/ and writes results/ correctly
   - the request asks OpenRouter to include usage data, and the post-run summary
     totals cost alongside tokens
-  - tqdm draws a single overall bar, with rate and running ok/fail counts
+  - tqdm draws a single overall bar, with rate and running ok/fail counts and cost
   - each run writes a timestamped file so runs never clobber each other; use
     --resume to continue the most recent file for the model
 
 Usage:
-  export OPENROUTER_API_KEY=sk-or-...   # also read from ~/.bashrc if present
+  export OPENROUTER_API_KEY_PROJECT=sk-or-...   # the key is read from the environment
   python scripts/run_experiment.py                     # full run
   python scripts/run_experiment.py --limit 5           # smoke test
   python scripts/run_experiment.py --resume            # continue the last run
@@ -195,14 +196,14 @@ def latest_results_path(model, reasoning_mode, reasoning_value, results_dir=None
 
 
 def load_api_key():
-    """Read OPENROUTER_API_KEY_PROJECT from env.
+    """Read OPENROUTER_API_KEY_PROJECT from the environment.
 
     The key is never printed or logged.
     """
     key = os.environ.get("OPENROUTER_API_KEY_PROJECT", "").strip()
     if key:
         return key
-    raise SystemExit("OPENROUTER_API_KEY_PROJECT not found in env or ~/.bashrc")
+    raise SystemExit("OPENROUTER_API_KEY_PROJECT is not set in the environment")
 
 
 def build_user_message(question, options):
