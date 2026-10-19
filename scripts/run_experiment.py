@@ -79,10 +79,12 @@ SAVE_EVERY = 10
 
 # Progress bar stability. tqdm's default smoothing (0.3) weights only the last
 # few completions, so with 20 calls in flight and heavy-tailed latencies the rate
-# and ETA lurch by roughly 4.6x between the 10th and 90th percentile. A smaller
-# smoothing factor gives the estimate a longer memory, and a slower refresh keeps
-# it readable.
-PROGRESS_SMOOTHING = 0.05
+# and ETA lurched by roughly 4.6x between the 10th and 90th percentile. tqdm's
+# documented smoothing=0 ("average all") is broken in 4.70.1: the EMA is skipped
+# when smoothing is falsy, so the rate comes back empty. A near-zero positive
+# factor routes through the EMA instead, which makes dn/dt the whole-run mean, so
+# both the rate and the remaining-time estimate come from the entire history.
+PROGRESS_SMOOTHING = 1e-9
 PROGRESS_MININTERVAL = 0.5
 
 # Copied verbatim from the original scripts so results are comparable.

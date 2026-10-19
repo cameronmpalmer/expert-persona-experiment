@@ -446,6 +446,30 @@ class TestProgress(unittest.TestCase):
         # Calmer than tqdm's default (0.3), which swings with bursty completions.
         self.assertLess(captured["smoothing"], 0.3)
 
+    def test_progress_rate_is_a_full_history_average(self):
+        # Slow first half then fast second half: an EMA would track the fast
+        # tail, while a whole-history average stays at the overall mean.
+        import io
+
+        bar = rx.tqdm(
+            total=100,
+            smoothing=rx.PROGRESS_SMOOTHING,
+            mininterval=0.0,
+            file=io.StringIO(),
+            dynamic_ncols=False,
+            disable=False,
+        )
+        clock = [bar.start_t]
+        bar._time = lambda: clock[0]
+        bar.last_print_t = clock[0]
+        for i in range(50):
+            clock[0] += 4.0 if i < 25 else 1.0
+            bar.update(1)
+        rate = bar.format_dict["rate"]
+        bar.close()
+        # 50 calls in 25*4 + 25*1 = 125 seconds -> 0.4 calls/s overall.
+        self.assertAlmostEqual(rate, 0.4, delta=0.05)
+
     def test_update_progress_does_not_force_refresh(self):
         bar = _FakeBar()
         rx.update_progress(bar, ok=1, fail=0, cost=0.0)
