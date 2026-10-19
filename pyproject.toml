@@ -8,6 +8,7 @@ authors = [
 ]
 requires-python = ">=3.14"
 dependencies = [
+    "matplotlib>=3.11.2",
     "pyarrow>=26.0.0",
     "pytest-cov>=7.1.0",
     "tqdm>=4.70.1",
@@ -34,5 +35,5 @@ source = ["scripts"]
 [tool.coverage.report]
 # Report only on modules the suite tests; measure all of scripts/. Add modules
 # here as they gain tests.
-include = ["scripts/run_experiment.py", "scripts/sample_mmlu.py"]
+include = ["scripts/run_experiment.py", "scripts/sample_mmlu.py", "scripts/analyze_results.py"]
 show_missing = true

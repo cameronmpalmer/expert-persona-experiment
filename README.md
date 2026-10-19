@@ -32,7 +32,7 @@ The work is split into two phases:
 - **Design:** paired, so every question is answered under every condition and any
   difference is attributable to the system prompt. Conditions are the built-in
   four unless `--conditions-file` supplies another set.
-- **Outcomes:** answer accuracy, plus token usage (prompt, completion, reasoning).
+- **Outcomes:** answer accuracy, plus token usage (prompt and reasoning).
   Cost is tokens times price and speed is tokens per unit time, so tokens are the
   underlying quantity recorded for every call.
 
@@ -210,21 +210,26 @@ watch for 429 backoff.
 .venv/bin/python scripts/analyze_results.py results/<file>.json --format-errors out.tsv
 .venv/bin/python scripts/analyze_results.py results/<file>.json --credit-format-errors
 .venv/bin/python scripts/analyze_results.py results/<file>.json --no-significance
+.venv/bin/python scripts/analyze_results.py results/<file>.json --plot out.png
 ```
 
 Views combine; `--json` suppresses the text views, and partial (in-progress) files
 are handled. The summary prints, in order:
 
-- **Counts and accuracy** per condition: `Correct`, `Wrong`, `Blank`, `FmtErr`,
-  `Missing`, `Acc(ans)` (answered only), `Acc(all)`, and `Cost`.
+- **Counts and accuracy** per condition: `Correct`, `Wrong`, `Blank(len)`,
+  `Blank(stop)`, `FmtErr`, `Missing`, `Acc(ans)` (answered only), `Acc(all)`, and
+  `Cost`.
 - **Total cost** across conditions.
-- **Token usage vs baseline:** mean prompt, completion, and reasoning tokens, the
-  `R med` column (median reasoning tokens, far below the mean because these counts
-  are skewed), the mean deltas (`dPrompt`, `dCompl`, `dReason`), `dR med` (median
-  of the per-question reasoning differences), and the reasoning-token ratio with a
-  95% interval and a p-value. The interval is a delta-method interval on the log
-  ratio; the p-value is the exact sign test on the per-question differences. With
-  reasoning off the reasoning columns are zero and the ratio and p-value show `n/a`.
+- **Token usage vs baseline:** mean prompt and reasoning tokens, the `R med` column
+  (median reasoning tokens, far below the mean because these counts are skewed), the
+  mean deltas (`dPrompt`, `dReason`), `dR med` (median of the per-question reasoning
+  differences), and the reasoning-token ratio with a 95% interval and a p-value. The
+  interval is a delta-method interval on the log ratio; the p-value is the exact sign
+  test on the per-question differences. With reasoning off the reasoning columns are
+  zero and the ratio and p-value show `n/a`. Completion tokens are deliberately not
+  reported: the visible answer is a single letter, and the provider's completion and
+  reasoning fields disagree with each other (reasoning exceeds completion in a large
+  fraction of calls), so reasoning tokens are the measurable quantity.
 - **Paired significance:** each condition against baseline with the exact McNemar
   test on discordant pairs, showing `Fixed`, `Broke`, the discordant total, the net
   difference in percentage points, a 95% interval, and p. This is the only place the
@@ -234,10 +239,32 @@ are handled. The summary prints, in order:
 - **Answer changes vs baseline** (answered pairs only): `Changed`, `W->R`, `R->W`,
   `W->W`, `Same`.
 
-Entries that name no option are split two ways. `Blank` means the completion field
-is empty (often a truncated `finish_reason: length` call). `FmtErr` means the
-completion is non-blank but holds no option letter, for example `2.5 gallons`.
-Both are kept out of wrong answers.
+Entries that name no option are split two ways. `Blank(len)` and `Blank(stop)` are
+both empty completions, separated by finish reason: `Blank(len)` hit the output cap
+(`finish_reason: length`, the model was still thinking when it ran out of budget)
+and `Blank(stop)` stopped with no content at all (`finish_reason: stop`). `FmtErr`
+means the completion is non-blank but holds no option letter, for example
+`2.5 gallons`. All three are kept out of wrong answers. The answer is never
+recovered from the reasoning trace, since a real user reads the completion.
+
+`--plot OUT.png` writes a figure of the reasoning-token distribution for one input
+file (matplotlib, a declared dependency). A box-and-whiskers panel sits on top, and
+below it there is one density panel per condition on a shared log axis, so the shapes
+can be compared without overlapping curves:
+
+- **Box and whiskers** for every condition on one log axis: the box is the IQR, the
+  line is the median, the diamond is the mean, and dots are values beyond 1.5 IQR.
+  Baseline sits at the top. This is the clearest read on median versus mean and on
+  how far the tail runs.
+- **Density**, one panel per condition, with that condition's median (solid) and mean
+  (dashed) marked and the median and mean printed in the title.
+- **Accuracy against cost**, one labeled point per condition with accuracy over all
+  calls on the y axis and that condition's run cost on the x axis. Every call was
+  paid for, so blanks and truncations count against the condition here; the summary
+  table also reports the answered-calls rate.
+
+Reasoning tokens are the only token metric plotted, for the reason above. It takes
+exactly one input file.
 
 `--format-errors OUT` dumps every `FmtErr` row to a tab-separated file with
 columns condition, id, category, gold, the raw reply, `regex_letter`,

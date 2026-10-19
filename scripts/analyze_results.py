@@ -6,12 +6,14 @@ Handles both result file shapes:
   - OpenRouter runs (experiment_openrouter_think.py): entries have "reasoning"
 
 An entry that names no option is split in two. A blank completion field (empty
-`raw`) is a non-answer: the model returned nothing. A non-blank completion that
-still does not contain an option letter is a format parsing error: the model
-answered in a shape the parser could not read, for example "2.5 gallons" in
-place of a letter. Both are kept out of wrong answers. Partial results files
-(run in progress) are handled gracefully - missing entries are reported per
-condition.
+`raw`) is a non-answer, and blanks are further split by finish reason into
+`Blank(len)` (hit the output cap, `finish_reason: length`) and `Blank(stop)` (stopped
+with no content). A non-blank completion that still does not contain an option
+letter is a format parsing error: the model answered in a shape the parser could
+not read, for example "2.5 gallons" in place of a letter. None of these are
+recovered from the reasoning trace, since a real user reads the completion.
+Partial results files (run in progress) are handled gracefully - missing entries
+are reported per condition.
 
 Usage:
   python3 analyze_results.py FILE [FILE ...]           default summary per file
@@ -22,6 +24,7 @@ Usage:
   python3 analyze_results.py FILE --json               machine-readable summary
   python3 analyze_results.py FILE --format-errors OUT  dump format errors to OUT (TSV)
   python3 analyze_results.py FILE --credit-format-errors  score matched format errors as correct
+  python3 analyze_results.py FILE --plot OUT.png       write a token-distribution plot
 
 All views can be combined; --json suppresses the text views. --format-errors
 writes one row per format parsing error (condition, question id, category, gold
@@ -171,7 +174,14 @@ def cond_stats(results, questions, cond, credit_format_errors=False):
     entries = results.get(cond, {})
     n = len(questions)
     correct = sum(1 for e in entries.values() if e.get("correct"))
-    blank = sum(1 for e in entries.values() if classify_entry(e) == "blank")
+    blank_len = sum(
+        1
+        for e in entries.values()
+        if classify_entry(e) == "blank" and e.get("finish_reason") == "length"
+    )
+    blank_total = sum(1 for e in entries.values() if classify_entry(e) == "blank")
+    blank_stop = blank_total - blank_len
+    blank = blank_total
     format_errors = sum(1 for e in entries.values() if classify_entry(e) == "format")
     credited = 0
     if credit_format_errors:
@@ -202,7 +212,6 @@ def cond_stats(results, questions, cond, credit_format_errors=False):
         return vals
 
     pv = token_values("prompt_tokens")
-    cv = token_values("completion_tokens")
     rv = token_values("reasoning_tokens")
     return {
         "n": n,
@@ -211,16 +220,16 @@ def cond_stats(results, questions, cond, credit_format_errors=False):
         "wrong": wrong,
         "answered": answered,
         "blank": blank,
+        "blank_len": blank_len,
+        "blank_stop": blank_stop,
         "format_errors": format_errors,
         "credited": credited,
         "missing": missing,
         "cost": sum(costs),
         "cost_entries": len(costs),
         "mean_prompt_tokens": (sum(pv) / len(pv)) if pv else None,
-        "mean_completion_tokens": (sum(cv) / len(cv)) if cv else None,
         "mean_reasoning_tokens": (sum(rv) / len(rv)) if rv else None,
         "median_prompt_tokens": statistics.median(pv) if pv else None,
-        "median_completion_tokens": statistics.median(cv) if cv else None,
         "median_reasoning_tokens": statistics.median(rv) if rv else None,
         "acc_answered": (correct / answered) if answered else None,
         "acc_all": (correct / n) if n else None,
@@ -473,6 +482,143 @@ def write_format_errors(files, path):
     return len(rows)
 
 
+# ---------------------------------------------------------------- plots ---
+
+
+def token_series(d, cond, key):
+    """Token counts for one condition and usage key, skipping missing values."""
+    out = []
+    for e in d["results"].get(cond, {}).values():
+        v = (e.get("usage") or {}).get(key)
+        if v is not None:
+            out.append(v)
+    return out
+
+
+def plot_tokens(d, out_path):
+    """Write a PNG comparing reasoning-token cost and accuracy across conditions.
+
+    A box-and-whiskers panel (median, IQR, whiskers, mean) sits on top, followed by
+    one density panel per condition on a shared log axis, and an accuracy-versus-cost
+    scatter at the bottom (accuracy over all calls, the deployment-facing rate).
+    Reasoning tokens are the quantity that matters here; the
+    visible answer is a single letter, so completion tokens add nothing, and the
+    provider reports completion and reasoning inconsistently anyway.
+    """
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    order = d["order"]
+    key = "reasoning_tokens"
+    cols = 3
+    dens_rows = math.ceil(len(order) / cols)
+    total_rows = 1 + dens_rows + 1
+    cmap = matplotlib.colormaps["tab10"]
+    fig = plt.figure(figsize=(13, 3.6 + 2.7 * total_rows))
+    gs = fig.add_gridspec(total_rows, cols, height_ratios=[1.3] + [1.0] * dens_rows + [1.2])
+    ax_box = fig.add_subplot(gs[0, :])
+    suptitle = f"{os.path.basename(d['meta']['path']).split('__')[0]}  n={len(d['questions'])}"
+
+    base_vals = token_series(d, "baseline", key)
+    if not base_vals or max(base_vals) <= 0:
+        ax_box.set_title("Reasoning tokens: no data")
+        ax_box.axis("off")
+        for i in range(len(order)):
+            fig.add_subplot(gs[1 + i // cols, i % cols]).axis("off")
+    else:
+        # Box and whiskers: readable at a glance even when the tails are long.
+        # Zero values cannot be drawn on a log axis, so they are dropped here.
+        data = []
+        for cond in order:
+            vals = [v for v in token_series(d, cond, key) if v > 0]
+            data.append(vals if vals else [np.nan])
+        ax_box.boxplot(
+            data,
+            orientation="horizontal",
+            positions=range(len(order)),
+            widths=0.6,
+            whis=1.5,
+            showmeans=True,
+            flierprops={"marker": ".", "markersize": 2, "alpha": 0.35},
+            meanprops={
+                "marker": "D",
+                "markerfacecolor": "black",
+                "markeredgecolor": "black",
+                "markersize": 4,
+            },
+            medianprops={"linewidth": 1.6},
+        )
+        ax_box.set_xscale("log")
+        ax_box.set_yticks(range(len(order)), labels=order)
+        ax_box.invert_yaxis()  # baseline (position 0) at the top
+        ax_box.set_title("Reasoning tokens: box and whiskers")
+        ax_box.set_xlabel("tokens (log scale)")
+        ax_box.grid(True, axis="x", alpha=0.25, linewidth=0.5)
+
+        positive = [v for c in order for v in token_series(d, c, key) if v > 0]
+        hi = max(positive) if positive else 1
+        bins = np.logspace(0, np.log10(max(hi, 10)), 40)
+        hist = []
+        for cond in order:
+            vals = [v for v in token_series(d, cond, key) if v > 0]
+            counts, _ = np.histogram(vals, bins=bins, density=True)
+            hist.append(counts)
+        ymax = max((h.max() for h in hist), default=1.0)
+
+        for i, cond in enumerate(order):
+            ax = fig.add_subplot(gs[1 + i // cols, i % cols])
+            color = cmap(i % 10)
+            ax.stairs(hist[i], bins, color=color, fill=True, alpha=0.25, linewidth=1.6)
+            vals = token_series(d, cond, key)
+            med, mean = np.median(vals), np.mean(vals)
+            if med > 0:
+                ax.axvline(med, color=color, linestyle="-", linewidth=1.3)
+            if mean > 0:
+                ax.axvline(mean, color=color, linestyle="--", linewidth=1.3)
+            ax.set_xscale("log")
+            ax.set_xlim(bins[0], bins[-1])
+            ax.set_ylim(0, ymax * 1.15)
+            ax.grid(True, which="both", alpha=0.25, linewidth=0.5)
+            ax.set_title(f"{cond}   median {med:.0f}, mean {mean:.0f}", fontsize=10)
+            ax.tick_params(labelsize=8)
+            if i % cols == 0:
+                ax.set_ylabel("density", fontsize=9)
+            if i // cols == dens_rows - 1:
+                ax.set_xlabel("tokens (log scale)", fontsize=9)
+
+    # Accuracy against spend. Up and to the left is the good corner: more accurate
+    # and cheaper. Accuracy is over all calls, so every call that was paid for counts,
+    # including blanks and truncations that yielded no answer.
+    ax_cost = fig.add_subplot(gs[total_rows - 1, :])
+    ax_cost.set_title("Accuracy vs cost (up and to the left is better)")
+    ax_cost.set_xlabel("run cost in USD (per condition)")
+    ax_cost.set_ylabel("accuracy, all calls (%)")
+    for i, cond in enumerate(order):
+        s = cond_stats(d["results"], d["questions"], cond)
+        acc = (s["acc_all"] or 0.0) * 100
+        ax_cost.scatter(s["cost"], acc, s=80, color=cmap(i % 10), edgecolor="black", zorder=3)
+        ax_cost.annotate(
+            cond,
+            (s["cost"], acc),
+            textcoords="offset points",
+            xytext=(8, 5),
+            fontsize=9,
+        )
+    ax_cost.grid(True, alpha=0.25, linewidth=0.5)
+    ax_cost.margins(x=0.15, y=0.2)
+
+    fig.suptitle(
+        f"{suptitle}\nbox = IQR, line = median, diamond = mean, dots = values beyond 1.5xIQR",
+        fontsize=12,
+    )
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=140)
+    plt.close(fig)
+
+
 # ---------------------------------------------------------------- output ---
 
 
@@ -523,8 +669,8 @@ def render_tokens(d, stats=None):
     print("Token usage vs baseline (tokens per call; means, plus median reasoning):")
     w = cond_col_width(order)
     hdr = (
-        f"{'Condition':<{w}}{'Prompt':>8}{'Compl':>8}{'Reason':>8}{'R med':>7}"
-        f"{'dPrompt':>9}{'dCompl':>9}{'dReason':>9}{'dR med':>8}"
+        f"{'Condition':<{w}}{'Prompt':>8}{'Reason':>8}{'R med':>7}"
+        f"{'dPrompt':>9}{'dReason':>9}{'dR med':>8}"
         f"{'Reason x':>10}{'95% CI':>14}{'p':>9}"
     )
     print(hdr)
@@ -533,11 +679,11 @@ def render_tokens(d, stats=None):
         s = stats[cond]
         row = (
             f"{cond:<{w}}{fmt_int(s['mean_prompt_tokens']):>8}"
-            f"{fmt_int(s['mean_completion_tokens']):>8}{fmt_int(s['mean_reasoning_tokens']):>8}"
+            f"{fmt_int(s['mean_reasoning_tokens']):>8}"
             f"{fmt_int(s['median_reasoning_tokens']):>7}"
         )
         if cond == "baseline":
-            row += f"{'-':>9}{'-':>9}{'-':>9}{'-':>8}{'1.00':>10}{'-':>14}{'-':>9}"
+            row += f"{'-':>9}{'-':>9}{'-':>8}{'1.00':>10}{'-':>14}{'-':>9}"
         else:
             rr = reason_ratio_stats(results, questions, cond)
             ratio_str = f"{rr['ratio']:.2f}" if rr else "n/a"
@@ -547,7 +693,6 @@ def render_tokens(d, stats=None):
             md_str = f"{md:>+8.0f}" if md is not None else f"{'n/a':>8}"
             row += (
                 fmt_delta(s["mean_prompt_tokens"], base["mean_prompt_tokens"])
-                + fmt_delta(s["mean_completion_tokens"], base["mean_completion_tokens"])
                 + fmt_delta(s["mean_reasoning_tokens"], base["mean_reasoning_tokens"])
                 + md_str
                 + f"{ratio_str:>10}{ci_str:>14}{p_str:>9}"
@@ -589,7 +734,7 @@ def render_summary(d, credit_format_errors=False, significance=True):
     if credit_format_errors:
         print("Scoring: format errors credited when the reply matches the gold option")
     print()
-    hdr = f"{'Condition':<{w}}{'Correct':>8}{'Wrong':>7}{'Blank':>7}{'FmtErr':>8}"
+    hdr = f"{'Condition':<{w}}{'Correct':>8}{'Wrong':>7}{'Blank(len)':>11}{'Blank(stop)':>12}{'FmtErr':>8}"
     if credit_format_errors:
         hdr += f"{'Credit':>8}"
     hdr += f"{'Missing':>9}{'Acc(ans)':>11}{'Acc(all)':>10}{'Cost':>11}"
@@ -599,7 +744,10 @@ def render_summary(d, credit_format_errors=False, significance=True):
     for cond in order:
         s = cond_stats(results, questions, cond, credit_format_errors=credit_format_errors)
         stats[cond] = s
-        row = f"{cond:<{w}}{s['correct']:>8}{s['wrong']:>7}{s['blank']:>7}{s['format_errors']:>8}"
+        row = (
+            f"{cond:<{w}}{s['correct']:>8}{s['wrong']:>7}{s['blank_len']:>11}"
+            f"{s['blank_stop']:>12}{s['format_errors']:>8}"
+        )
         if credit_format_errors:
             row += f"{s['credited']:>8}"
         row += (
@@ -678,7 +826,8 @@ def render_questions(d):
                 continue
             cls = classify_entry(e)
             if cls == "blank":
-                print(f"{'blank':<{cw}}", end="")
+                label = "trunc" if e.get("finish_reason") == "length" else "empty"
+                print(f"{label:<{cw}}", end="")
             elif cls == "format":
                 print(f"{'fmt':<{cw}}", end="")
             else:
@@ -791,6 +940,14 @@ def main():
             sys.exit(1)
         fmt_path = args[i + 1]
         del args[i : i + 2]
+    plot_path = None
+    if "--plot" in args:
+        i = args.index("--plot")
+        if i + 1 >= len(args):
+            print("error: --plot needs an output path", file=sys.stderr)
+            sys.exit(1)
+        plot_path = args[i + 1]
+        del args[i : i + 2]
     credit = "--credit-format-errors" in args
     significance = "--no-significance" not in args
     flags = {
@@ -811,6 +968,13 @@ def main():
     if fmt_path is not None:
         n = write_format_errors(files, fmt_path)
         print(f"Wrote {n} format errors to {fmt_path}")
+
+    if plot_path is not None:
+        if len(files) != 1:
+            print("error: --plot takes exactly one input file", file=sys.stderr)
+            sys.exit(1)
+        plot_tokens(files[0], plot_path)
+        print(f"Wrote plot to {plot_path}")
 
     if flags["--json"]:
         render_json(files, credit_format_errors=credit, significance=significance)

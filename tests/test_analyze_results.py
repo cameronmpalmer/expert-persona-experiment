@@ -618,7 +618,6 @@ class TestTokenUsage(unittest.TestCase):
             d = ar.load_file(self._fixture(tmp))
             s = ar.cond_stats(d["results"], d["questions"], "expert")
             self.assertEqual(s["mean_prompt_tokens"], 139)
-            self.assertEqual(s["mean_completion_tokens"], 200)
             self.assertEqual(s["mean_reasoning_tokens"], 150)
 
     def test_summary_has_token_section(self):
@@ -875,6 +874,257 @@ class TestThinkingLabel(unittest.TestCase):
 
     def test_unknown(self):
         self.assertEqual(ar.thinking_label({}), "?")
+
+
+class TestBlankSplit(unittest.TestCase):
+    def _fixture(self, tmp):
+        q = [
+            {
+                "id": str(i),
+                "category": "x",
+                "options": ["a", "b"],
+                "answer_index": 0,
+                "question": "?",
+            }
+            for i in range(1, 5)
+        ]
+        res = {
+            "baseline": {
+                "1": {"answer": "A", "correct": True, "raw": "A"},
+                "2": {"answer": "?", "correct": False, "raw": "", "finish_reason": "length"},
+                "3": {"answer": "?", "correct": False, "raw": "", "finish_reason": "stop"},
+                "4": {"answer": "?", "correct": False, "raw": "", "finish_reason": None},
+            }
+        }
+        return write_results(tmp, res, questions=q, name="b.json")
+
+    def test_cond_stats_splits_blanks_by_finish_reason(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            d = ar.load_file(self._fixture(tmp))
+            s = ar.cond_stats(d["results"], d["questions"], "baseline")
+            self.assertEqual(s["blank_len"], 1)
+            self.assertEqual(s["blank_stop"], 2)  # 'stop' and missing both count as stopped
+            self.assertEqual(s["blank"], 3)
+
+    def test_summary_has_blank_len_and_blank_stop_columns(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            d = ar.load_file(self._fixture(tmp))
+            import io
+            from contextlib import redirect_stdout
+
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                ar.render_summary(d, significance=False)
+            out = buf.getvalue()
+            header = out.splitlines()[3]
+            self.assertIn("Blank(len)", header)
+            self.assertIn("Blank(stop)", header)
+            self.assertNotIn("Blank ", header)  # the combined column is gone
+
+    def test_questions_view_marks_trunc_and_empty(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            d = ar.load_file(self._fixture(tmp))
+            import io
+            from contextlib import redirect_stdout
+
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                ar.render_questions(d)
+            out = buf.getvalue()
+            self.assertIn("trunc", out)
+            self.assertIn("empty", out)
+
+
+class TestPlots(unittest.TestCase):
+    def _fixture(self, tmp, name="p.json"):
+        q = [
+            {
+                "id": str(i),
+                "category": "x",
+                "options": ["a", "b"],
+                "answer_index": 0,
+                "question": "?",
+            }
+            for i in range(1, 6)
+        ]
+
+        def entry(ct, rt):
+            return {
+                "answer": "A",
+                "correct": True,
+                "raw": "A",
+                "usage": {
+                    "prompt_tokens": 100,
+                    "completion_tokens": ct,
+                    "reasoning_tokens": rt,
+                    "cost": 0.001,
+                },
+            }
+
+        res = {
+            "baseline": {str(i + 1): entry(100 + i * 10, 50 + i * 10) for i in range(5)},
+            "expert": {str(i + 1): entry(200 + i * 20, 120 + i * 25) for i in range(5)},
+        }
+        return write_results(tmp, res, questions=q, name=name)
+
+    def test_token_series_skips_missing_values(self):
+        d = {
+            "results": {
+                "baseline": {
+                    "1": {"usage": {"reasoning_tokens": 5}},
+                    "2": {"usage": None},
+                    "3": {"usage": {}},
+                }
+            }
+        }
+        self.assertEqual(ar.token_series(d, "baseline", "reasoning_tokens"), [5])
+
+    def test_plot_writes_a_png(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            d = ar.load_file(self._fixture(tmp))
+            out = os.path.join(tmp, "p.png")
+            ar.plot_tokens(d, out)
+            self.assertTrue(os.path.exists(out))
+            with open(out, "rb") as fh:
+                self.assertEqual(fh.read(8), b"\x89PNG\r\n\x1a\n")
+
+    def test_plot_handles_all_zero_reasoning(self):
+        # Thinking off: reasoning tokens are all zero, so those panels have no
+        # data. The plot must still be written (those panels are blanked out).
+        with tempfile.TemporaryDirectory() as tmp:
+            q = [
+                {
+                    "id": "1",
+                    "category": "x",
+                    "options": ["a", "b"],
+                    "answer_index": 0,
+                    "question": "?",
+                }
+            ]
+            entry = {
+                "answer": "A",
+                "correct": True,
+                "raw": "A",
+                "usage": {"prompt_tokens": 100, "completion_tokens": 2, "reasoning_tokens": 0},
+            }
+            res = {"baseline": {"1": entry}, "expert": {"1": entry}}
+            d = ar.load_file(write_results(tmp, res, questions=q, name="z.json"))
+            out = os.path.join(tmp, "z.png")
+            ar.plot_tokens(d, out)
+            self.assertTrue(os.path.exists(out))
+
+    def test_box_y_axis_is_inverted_baseline_on_top(self):
+        # matplotlib draws position 0 at the bottom, so the axis is inverted to
+        # put baseline (the first condition) at the top.
+        import matplotlib
+
+        matplotlib.use("Agg")
+        from unittest import mock
+
+        import matplotlib.pyplot as plt
+
+        with tempfile.TemporaryDirectory() as tmp:
+            d = ar.load_file(self._fixture(tmp))
+            out = os.path.join(tmp, "inv.png")
+            with mock.patch.object(plt, "close", lambda *a, **k: None):
+                ar.plot_tokens(d, out)
+                fig = plt.gcf()
+            ax = fig.axes[0]
+            y0, y1 = ax.get_ylim()
+            labels = [t.get_text() for t in ax.get_yticklabels()]
+            plt.close(fig)
+        self.assertGreater(y0, y1)  # inverted: position 0 sits at the top
+        self.assertEqual(labels[0], "baseline")
+
+    def test_plot_has_one_density_panel_per_condition(self):
+        import matplotlib
+
+        matplotlib.use("Agg")
+        from unittest import mock
+
+        import matplotlib.pyplot as plt
+
+        with tempfile.TemporaryDirectory() as tmp:
+            d = ar.load_file(self._fixture(tmp))
+            out = os.path.join(tmp, "panels.png")
+            with mock.patch.object(plt, "close", lambda *a, **k: None):
+                ar.plot_tokens(d, out)
+                fig = plt.gcf()
+            n_axes = len(fig.axes)
+            plt.close(fig)
+        # box panel + one density per condition + accuracy-vs-cost panel
+        self.assertEqual(n_axes, 2 + len(d["order"]))
+
+    def test_plot_has_accuracy_vs_cost_panel(self):
+        import matplotlib
+
+        matplotlib.use("Agg")
+        from unittest import mock
+
+        import matplotlib.pyplot as plt
+
+        with tempfile.TemporaryDirectory() as tmp:
+            d = ar.load_file(self._fixture(tmp))
+            out = os.path.join(tmp, "cost.png")
+            with mock.patch.object(plt, "close", lambda *a, **k: None):
+                ar.plot_tokens(d, out)
+                fig = plt.gcf()
+            titles = [ax.get_title().lower() for ax in fig.axes]
+            plt.close(fig)
+        self.assertTrue(any("cost" in t and "accuracy" in t for t in titles), titles)
+
+    def test_cost_panel_uses_all_calls_accuracy(self):
+        # The cost panel reports accuracy over all calls, so a blank call lowers
+        # it; a blank was still paid for and yields no usable answer.
+        import matplotlib
+
+        matplotlib.use("Agg")
+        from unittest import mock
+
+        import matplotlib.pyplot as plt
+
+        q = [Q, dict(Q, id="2")]
+        answered = {
+            "answer": "A",
+            "correct": True,
+            "raw": "A",
+            "usage": {"prompt_tokens": 10, "completion_tokens": 1, "reasoning_tokens": 5},
+        }
+        blank = {
+            "answer": "?",
+            "correct": False,
+            "raw": "",
+            "finish_reason": "length",
+            "usage": {"prompt_tokens": 10, "completion_tokens": 0, "reasoning_tokens": 0},
+        }
+        res = {
+            "baseline": {"1": answered, "2": answered},
+            "expert": {"1": answered, "2": blank},
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            d = ar.load_file(write_results(tmp, res, questions=q, name="acc.json"))
+            out = os.path.join(tmp, "acc.png")
+            with mock.patch.object(plt, "close", lambda *a, **k: None):
+                ar.plot_tokens(d, out)
+                fig = plt.gcf()
+            ax = next(a for a in fig.axes if "cost" in a.get_title().lower())
+            ylabel = ax.get_ylabel()
+            ys = [float(c.get_offsets()[0, 1]) for c in ax.collections]
+            plt.close(fig)
+        self.assertEqual(ylabel, "accuracy, all calls (%)")
+        # expert answered one of two calls, so all-calls accuracy is 50%.
+        self.assertEqual(ys, [100.0, 50.0])
+
+    def test_cli_plot_requires_exactly_one_file(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            a, b = self._fixture(tmp, "a.json"), self._fixture(tmp, "b.json")
+            argv = sys.argv
+            sys.argv = ["analyze_results.py", a, b, "--plot", os.path.join(tmp, "x.png")]
+            try:
+                with self.assertRaises(SystemExit):
+                    ar.main()
+            finally:
+                sys.argv = argv
 
 
 if __name__ == "__main__":
