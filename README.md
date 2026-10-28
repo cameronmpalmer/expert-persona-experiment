@@ -9,6 +9,8 @@ Four models answer the same 5,000 paired MMLU-Pro questions under five system
 prompts: no prompt, a length-matched neutral instruction, and short, generic, and
 long expert instructions.
 
+Full blog post here: https://cameronmpalmer.com/blog/are-you-paying-for-useless-llm-prompts
+
 ## Method
 
 - **Benchmark:** graduate-level questions sampled from the MMLU-Pro test set
