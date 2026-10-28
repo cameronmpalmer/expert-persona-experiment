@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Cross-model comparison plots for the persona experiment.
 
-Selects the latest complete phase 2 run for each model at a given question count
+Selects the latest complete run for each model at a given question count
 and reasoning level, then writes a four-panel PNG:
 
   1. accuracy by condition
@@ -32,7 +32,7 @@ if str(_SCRIPT_DIR) not in sys.path:
 
 import run_data as rd  # noqa: E402
 
-PHASE2_CONDITIONS = ("neutral", "baseline", "expert_short", "expert", "expert_long")
+CONDITIONS = ("neutral", "baseline", "expert_short", "expert", "expert_long")
 
 MODEL_ORDER = (
     "anthropic/claude-haiku-5.5",
@@ -101,7 +101,7 @@ def discover_runs(
     *,
     questions: int = 5000,
     reasoning: str = "xhigh",
-    conditions: tuple[str, ...] = PHASE2_CONDITIONS,
+    conditions: tuple[str, ...] = CONDITIONS,
     models: tuple[str, ...] | None = None,
     allow_partial: bool = False,
 ) -> tuple[list[RunSummary], list[tuple[Path, str]]]:
@@ -393,7 +393,7 @@ def _footer(fig, fontsize: float = 8.5) -> None:
 def plot_comparison(
     runs: list[RunSummary],
     out_path: Path,
-    conditions: tuple[str, ...] = PHASE2_CONDITIONS,
+    conditions: tuple[str, ...] = CONDITIONS,
     *,
     reasoning: str = "xhigh",
     dpi: int = 160,
@@ -445,7 +445,7 @@ def plot_comparison(
 def plot_individual_panels(
     runs: list[RunSummary],
     out_path: Path,
-    conditions: tuple[str, ...] = PHASE2_CONDITIONS,
+    conditions: tuple[str, ...] = CONDITIONS,
     *,
     reasoning: str = "xhigh",
     dpi: int = 160,
@@ -517,12 +517,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Plot accuracy, cost, and reasoning tokens across model runs",
     )
-    parser.add_argument("--results-dir", default="results/phase2")
+    parser.add_argument("--results-dir", default="results")
     parser.add_argument("--questions", type=int, default=5000)
     parser.add_argument("--reasoning", default="xhigh")
     parser.add_argument(
         "--conditions",
-        default=",".join(PHASE2_CONDITIONS),
+        default=",".join(CONDITIONS),
         help="comma-separated condition names",
     )
     parser.add_argument(

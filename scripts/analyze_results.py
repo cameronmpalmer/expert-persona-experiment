@@ -37,7 +37,7 @@ accuracy reflects answers given in the wrong shape. A paired significance table
 (McNemar exact on discordant pairs) prints by default; pass --no-significance to
 hide it. The comparison tables compare against baseline by default; pass
 --reference neutral to use the length-matched non-expert control instead, which
-isolates the expert wording effect in phase 2. Intervals are 95% by default;
+isolates the expert wording effect. Intervals are 95% by default;
 pass --confidence 0.99 (or 99) for 99% intervals.
 """
 
@@ -273,7 +273,7 @@ def render_tokens(d, stats=None, reference="baseline", confidence=0.95):
     Cost and speed both follow from tokens: cost is tokens times price, speed
     is tokens per unit time. The means here use every entry that recorded usage.
     The default reference is baseline; neutral is the length-matched control
-    for phase 2 wording comparisons.
+    for wording comparisons.
     """
     results, order, questions = d["results"], d["order"], d["questions"]
     if stats is None:

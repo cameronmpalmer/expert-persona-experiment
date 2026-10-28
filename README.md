@@ -7,17 +7,12 @@ plus a follow-up on what expert instructions cost.
 **Question:** does telling a model it is an expert make it answer more accurately,
 and what does it cost?
 **Answer so far:** no accuracy gain. With reasoning on, the expert prompt can spend
-more tokens and money (Ling +36% versus the neutral control at 5,000 questions,
-+21% versus baseline in phase 1), but that cost is model-specific. Low-knowledge
-personas both cost more and hurt accuracy.
+more tokens and money (Ling +36% versus the neutral control at 5,000 questions),
+but that cost is model-specific.
 
-The work is split into two phases:
-
-- **Phase 1** - the original four-condition replication: `baseline`, `expert`,
-  `layperson`, `toddler`.
-- **Phase 2** - expert-instruction variants: `baseline`, `neutral` (length-matched
-  non-expert control), `expert_short`, `expert` (the phase 1 generic prompt),
-  `expert_long`.
+Four models answer the same 5,000 paired MMLU-Pro questions under five system
+prompts: no prompt, a length-matched neutral instruction, and short, generic, and
+long expert instructions.
 
 ## Method
 
@@ -26,41 +21,31 @@ The work is split into two phases:
   law, history), seeded and reproducible (`seed=42`). Samples live in
   `data/question_samples/mmlu_pro_sample_<n>.json` for n in 50, 100, 500, 1000,
   2000, 2500, 5000; the runner defaults to the 50-question rung.
-- **Models:** phase 2 ran `anthropic/claude-haiku-5.5`,
-  `deepseek/deepseek-v4-flash`, `inclusionai/ling-3.0-flash`, and
-  `z-ai/glm-5.3-flash` through OpenRouter at 5,000 questions, reasoning xhigh.
-  The runner defaults to `inclusionai/ling-3.0-flash`, thinking off by default
-  (pass `--reasoning-effort` to enable). The earliest results below come from
-  local Ollama runs (`qwen3.5:9b`, `qwen3.5:0.8b`, temperature 0, thinking
-  disabled).
+- **Models:** `anthropic/claude-haiku-5.5`, `deepseek/deepseek-v4-flash`,
+  `inclusionai/ling-3.0-flash`, and `z-ai/glm-5.3-flash` through OpenRouter at
+  5,000 questions, reasoning xhigh. The runner defaults to
+  `inclusionai/ling-3.0-flash`, thinking off by default (pass
+  `--reasoning-effort` to enable).
 - **Design:** paired, so every question is answered under every condition and any
-  difference is attributable to the system prompt. Conditions are the built-in
-  four unless `--conditions-file` supplies another set.
+  difference is attributable to the system prompt. The five conditions are in
+  `data/condition_variants/expert_variants.json`, passed with
+  `--conditions-file`.
 - **Outcomes:** answer accuracy, plus token usage (prompt and reasoning).
   Cost is tokens times price and speed is tokens per unit time, so tokens are the
   underlying quantity recorded for every call.
 
 ### Conditions
 
-Built-in (phase 1):
+`data/condition_variants/expert_variants.json`, with measured system-prompt
+lengths:
 
-| Condition | System prompt |
-|---|---|
-| baseline | *(none)* |
-| expert | "You are a world-class expert in physics, chemistry, biology, computer science, engineering, mathematics, economics, law, and history. You have decades of experience and you never make mistakes." |
-| layperson | "You are a layperson with no specialized training in any technical or academic subject." |
-| toddler | "You are a toddler. You are still learning the basics of the world and have almost no knowledge of science, engineering, law, or mathematics." |
-
-Phase 2 (`data/condition_variants/phase_2_conditions_expert_variants.json`), with
-measured system-prompt lengths:
-
-| Condition | System prompt tokens |
-|---|---|
-| baseline | 0 |
-| neutral | 38 |
-| expert_short | 6 ("You are an expert.") |
-| expert | 39 (same prompt as phase 1) |
-| expert_long | 72 |
+| Condition | Prompt | Tokens |
+|---|---|---|
+| baseline | *(none)* | 0 |
+| neutral | "You are a helpful assistant. You are always glad to help with whatever question the user asks. You try to be accurate, you think the problem through carefully, and you answer clearly." | 38 |
+| expert_short | "You are an expert." | 6 |
+| expert | "You are a world-class expert in physics, chemistry, biology, computer science, engineering, mathematics, economics, law, and history. You have decades of experience and you never make mistakes." | 39 |
+| expert_long | The expert prompt plus "You have decades of experience across academia and industry, you have published widely and taught at the highest level... Approach every question with the care and rigor of a seasoned specialist in the field." | 72 |
 
 The neutral control is a non-expert instruction of the same length as the expert
 prompt, so any difference between them reflects content rather than length.
@@ -71,7 +56,7 @@ Every number below comes from the run files listed in `tables/runs.csv`, and eve
 figure from `figures/`. Raw run files are not committed (1.4 GB of JSON); see
 [Reproducing the tables and figures](#reproducing-the-tables-and-figures).
 
-### Phase 2: expert wording variants, 5,000 questions, reasoning xhigh
+### Expert wording variants, 5,000 questions, reasoning xhigh
 
 Four models, five conditions, the same 5,000 paired questions. Cells are accuracy
 over all calls, with the number of answered calls in parentheses: a lower answered
@@ -106,16 +91,14 @@ Deepseek expert_long at -0.8 pp, p = 0.043).
 **The Deepseek baseline is a truncation artifact, not a persona effect.** 545 of
 its 5,000 baseline replies hit the 32,768-token cap and returned nothing, far more
 than any prompted condition (neutral truncates least, at 298). Its all-calls
-accuracy therefore rises
-5.9 pp from baseline to neutral (p < 1e-36) while answered-call accuracy barely
+accuracy therefore rises 5.9 pp from baseline to neutral (p < 1e-36) while answered-call accuracy barely
 moves, and against neutral the expert prompt is -0.1 pp (p = 0.79). Treat any
 claim that a system prompt helps Deepseek as an answered-rate effect.
 
 **The expert prompt's token cost is model-specific.** Against neutral, reasoning
-tokens change by +36% (Ling), +4% (Deepseek), +1% (GLM), and -4% (Claude). Phase 1
-found a 21% increase for Ling; phase 2 reproduces that for Ling and not for the
-other models. There is no general "expert personas cost more" rule, only a
-consistent "expert personas do not answer better" one.
+tokens change by +36% (Ling), +4% (Deepseek), +1% (GLM), and -4% (Claude). There is
+no general "expert personas cost more" rule, only a consistent "expert personas do
+not answer better" one.
 
 ![Cross-model comparison](figures/model-comparison-5000q.png)
 
@@ -123,52 +106,13 @@ Standalone versions of each panel are in `figures/model-comparison-5000q-accurac
 `-cost.png`, `-reasoning.png`, `-latency.png`, and `-accuracy-vs-cost.png`.
 Per-run token distributions are in `figures/runs/`.
 
-
-### Phase 1 on OpenRouter, 5,000 questions
-
-Reasoning off (`--reasoning-effort none`): accuracy is flat across conditions
-(59.8%, 59.7%, 59.2%, 59.8% for baseline, expert, layperson, toddler; all
-McNemar p >= 0.07), and because completions are about two tokens the conditions
-cost the same. Nothing to separate. The paired tests are in
-`tables/phase1-5000q-paired.csv`.
-
-Reasoning on (`--reasoning-effort xhigh`), 5,000 questions:
-
-| Condition | Accuracy | Net vs baseline | Reasoning tokens | Token ratio | Total cost |
-|---|---|---|---|---|---|
-| baseline | 82.0% | - | 2152 | 1.00 | $1.03 |
-| expert | 81.6% | -0.4pp (p=0.31) | 2595 | 1.21 [1.16, 1.25] | $1.20 |
-| layperson | 81.4% | -0.6pp (p=0.08) | 2294 | 1.07 [1.03, 1.10] | $1.09 |
-| toddler | 81.0% | -0.9pp (p=0.01) | 2306 | 1.07 [1.03, 1.11] | $1.09 |
-
-Read this as: the expert persona buys no accuracy and costs about 17% more, almost
-entirely extra reasoning tokens (mean +443 per call, median only +22, so the mean
-is tail-driven). The low-knowledge personas cost a little more and lose accuracy,
-and the toddler loss is significant. The effect sizes are not fully stable across
-runs of different size, so treat the reasoning-token penalty as "real in direction,
-roughly 9 to 21% in magnitude" (the cost penalty is roughly 7 to 17%).
-
-### Original local Ollama replication (44 questions)
-
-| Condition | qwen3.5:9b | qwen3.5:0.8b |
-|---|---|---|
-| baseline | **19/44 (43%)** | **10/44 (23%)** |
-| expert | 20/44 (45%) | 9/44 (20%) |
-| layperson | 18/44 (41%) | 9/44 (20%) |
-| toddler | 18/44 (41%) | 8/44 (18%) |
-
-Across both models and 88 answers the expert persona's net accuracy effect was
-zero; the low-knowledge personas lowered accuracy. Archived under `results/old/`.
-These runs used a 44-question sample that is no longer committed; the current
-sample ladder starts at 50.
-
 ### Caveats
 
-- The four phase 2 models ran behind different upstream providers (Anthropic
+- The four models ran behind different upstream providers (Anthropic
   native, Baidu fp8 for Deepseek, open-inference fp4 for GLM, and Ling's default
   OpenRouter pool). Model and provider are therefore confounded in the cross-model
   panels; the within-model condition comparisons are paired and unaffected.
-- One seeded draw per run at temperature 0 (seed 861 for the phase 2 runs), so
+- One seeded draw per run at temperature 0 (seed 861), so
   run-to-run token use varies and the cost magnitude is approximate.
 - Replies that hit the 32,768-token cap are recorded as blanks and never retried.
   That is a harness limit, not a model property, and it is why the answered count
@@ -204,19 +148,18 @@ set -a; . ./.env; set +a
 # plan only, no network calls
 .venv/bin/python scripts/run_experiment.py --dry-run --limit 2
 
-# phase 1 smoke test: 5 questions x 4 conditions = 20 calls
-.venv/bin/python scripts/run_experiment.py --limit 5
+# smoke test: 5 questions x 5 conditions = 25 calls
+.venv/bin/python scripts/run_experiment.py \
+  --conditions-file data/condition_variants/expert_variants.json --limit 5
 
-# phase 1 full run on the 50-question sample, reasoning off (the default)
-.venv/bin/python scripts/run_experiment.py
+# full run on the 50-question sample, reasoning off (the default)
+.venv/bin/python scripts/run_experiment.py \
+  --conditions-file data/condition_variants/expert_variants.json
 
-# phase 1 with reasoning on
-.venv/bin/python scripts/run_experiment.py --reasoning-effort xhigh
-
-# phase 2: expert wording variants, 5,000 questions, reasoning on
+# the writeup run: 5,000 questions, reasoning on
 .venv/bin/python scripts/run_experiment.py \
   --questions-file data/question_samples/mmlu_pro_sample_5000.json \
-  --conditions-file data/condition_variants/phase_2_conditions_expert_variants.json \
+  --conditions-file data/condition_variants/expert_variants.json \
   --reasoning-effort xhigh
 
 # continue the most recent run for this model
@@ -237,7 +180,7 @@ Options:
 | `--provider` | any | pin a specific upstream provider |
 | `--temperature` / `--seed` | `0.0` / `861` | sampling |
 | `--out FILE` / `--resume` | none | write an explicit file, or continue the newest run for the model (mutually exclusive) |
-| `--conditions-file FILE` | the built-in four | JSON `{name: system_prompt}` mapping to run instead of the defaults |
+| `--conditions-file FILE` | the built-in four | JSON `{name: system_prompt}` mapping; the study uses `data/condition_variants/expert_variants.json` |
 | `--dry-run` / `--force` | off | plan only / override the resume-compatibility check |
 
 Tasks are scheduled question-major, so all conditions run interleaved across a run
@@ -247,8 +190,8 @@ provider load drifting over time.
 Output: each run writes one file named for its question count, reasoning level, and
 start time (UTC): `results/{slug}__{count}q__{reasoning}__{timestamp}.json`, where
 `{reasoning}` is the effort level (`none`, `high`, ...) or `maxtokens{N}`. `results/`
-is git-ignored. Phase 1 results are kept in `results/phase1/` and phase 2 in
-`results/phase2/`; write there with `--out results/phase2/<name>.json`.
+is git-ignored and holds the raw runs; `make report` turns them into the committed
+tables and figures.
 
 Behavior: retries 429/5xx and network errors with backoff (5 attempts, 180s
 timeout), saves every 10 calls, aborts after 3 consecutive failures (exit 2), and
@@ -301,7 +244,7 @@ are handled. The summary prints, in order:
   reasoning fields disagree with each other (reasoning exceeds completion in a large
   fraction of calls), so reasoning tokens are the measurable quantity. The
   reference is baseline by default; `--reference neutral` uses the length-matched
-  non-expert control, which isolates the expert wording effect in phase 2. The
+  non-expert control, which isolates the expert wording effect. The
   paired accuracy test and answer-change table use the same reference.
 - **Paired significance:** each condition against the reference (baseline unless
   `--reference` says otherwise) with the exact McNemar
@@ -358,8 +301,8 @@ a scoring banner, the per-category table follows the same rule, and `--json` add
 
 ### Compare models
 
-`scripts/compare_models.py` selects the latest complete 5,000-question phase 2 run
-for each model and writes one combined four-panel PNG plus five standalone panel
+`scripts/compare_models.py` selects the latest complete 5,000-question run for
+each model and writes one combined four-panel PNG plus five standalone panel
 PNGs: accuracy, total cost by condition, mean reasoning tokens, average call
 latency, and accuracy against cost. It reads the run files directly, so no
 preprocessing is needed.
@@ -394,17 +337,17 @@ It writes:
   blanks split by cap versus empty stop, format errors, missing, accuracy over
   answered calls and over all calls, prompt and reasoning token means, median
   reasoning tokens, cost). Provider probe files (`spike_*`) are skipped.
-- `tables/model-comparison-5000q.csv`: the four-model phase 2 table.
-- `tables/phase1-5000q-paired.csv` and `tables/phase2-5000q-paired.csv`: exact
-  McNemar tests against baseline, and against the neutral control in phase 2.
+- `tables/model-comparison-5000q.csv`: the four-model table.
+- `tables/paired-5000q.csv`: exact McNemar tests against baseline and against the
+  neutral control.
 - `figures/model-comparison-5000q.png` plus five standalone panels, and one
   token-distribution figure per complete run that recorded reasoning tokens in
   `figures/runs/`.
 
 Point it at another tree with `--results-dir`, change the headline rung with
 `--questions` and `--reasoning`, and skip the per-run plots with `--no-run-figures`.
-The raw `results/` tree is not tracked: the phase 2 JSON files alone are over 1 GB
-and the largest single file is 504 MB, so the committed artifacts are the small,
+The raw `results/` tree is not tracked: the run JSON files alone are over 1 GB and
+the largest single file is 504 MB, so the committed artifacts are the small,
 deterministic outputs above.
 
 ### Regenerate the question sample
@@ -450,8 +393,8 @@ Tests live in `tests/` (stdlib `unittest`, run under `coverage`).
 
 ## Files
 
-- `scripts/run_experiment.py`: OpenRouter runner (built-in four conditions;
-  `--conditions-file` for phase 2 sets)
+- `scripts/run_experiment.py`: OpenRouter runner (built-in fallback conditions;
+  `--conditions-file` for the five-condition set)
 - `scripts/analyze_results.py`: CLI analysis (summary, tokens, significance,
   per-question, per-category, reasoning stats, compare, format-error dump, `--json`)
 - `scripts/compare_models.py`: cross-model four-panel comparison of 5,000-question runs
@@ -459,13 +402,11 @@ Tests live in `tests/` (stdlib `unittest`, run under `coverage`).
 - `scripts/run_data.py`: shared result loading and statistics used by the CLIs
 - `scripts/sample_mmlu.py`: seeded sampler from the MMLU-Pro parquet (needs pyarrow)
 - `data/question_samples/`: the question samples (`mmlu_pro_sample_<n>.json`)
-- `data/condition_variants/`: phase 2 condition sets
+- `data/condition_variants/`: the five system-prompt conditions
 - `data/mmlu_pro_test.parquet`: source parquet (git-ignored)
 - `tables/`: committed derived statistics (`runs.csv`, model comparison, paired tests)
 - `figures/`: committed comparison and per-run figures
-- `results/old/`: original local Ollama runs (git-ignored)
-- `results/phase1/`: phase 1 OpenRouter runs (git-ignored)
-- `results/phase2/`: phase 2 runs (git-ignored)
+- `results/`: raw run JSON files (git-ignored)
 - `tests/`: unit tests for the runner, sampler, analyzer, and report generator
 - `Makefile`, `pyproject.toml`: tasks and project/config
 

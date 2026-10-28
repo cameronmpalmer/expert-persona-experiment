@@ -1,7 +1,0 @@
-phase,file,model,reasoning,questions,reference,condition,paired,fixed,broke,discordant,net_pp,ci_low_pp,ci_high_pp,p
-phase1,results/phase1/inclusionai-ling-3.0-flash__5000q__none__20261012-202552.json,inclusionai/ling-3.0-flash,none,5000,baseline,expert,5000,151,155,306,-0.08,-0.765703757161699,0.6057037571616989,0.8638675552334697
-phase1,results/phase1/inclusionai-ling-3.0-flash__5000q__none__20261012-202552.json,inclusionai/ling-3.0-flash,none,5000,baseline,layperson,5000,104,132,236,-0.5599999999999999,-1.1619906779812221,0.041990677981222024,0.07860297621737812
-phase1,results/phase1/inclusionai-ling-3.0-flash__5000q__none__20261012-202552.json,inclusionai/ling-3.0-flash,none,5000,baseline,toddler,5000,135,137,272,-0.04,-0.6864901317303288,0.6064901317303288,0.9516655876680377
-phase1,results/phase1/inclusionai-ling-3.0-flash__5000q__xhigh__20261014-193200.json,inclusionai/ling-3.0-flash,xhigh,5000,baseline,expert,5000,145,164,309,-0.38,-1.0689799481168172,0.30897994811681717,0.30583693464798195
-phase1,results/phase1/inclusionai-ling-3.0-flash__5000q__xhigh__20261014-193200.json,inclusionai/ling-3.0-flash,xhigh,5000,baseline,layperson,5000,130,161,291,-0.62,-1.288468754224654,0.048468754224654034,0.07846083616211164
-phase1,results/phase1/inclusionai-ling-3.0-flash__5000q__xhigh__20261014-193200.json,inclusionai/ling-3.0-flash,xhigh,5000,baseline,toddler,5000,132,179,311,-0.9400000000000001,-1.6307956388770533,-0.249204361122947,0.0089880580969739

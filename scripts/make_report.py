@@ -3,7 +3,7 @@
 
 The raw run JSON files under results/ stay out of git. This script derives the
 small, reviewable artifacts that are committed: long-format run statistics,
-cross-model and phase-1 paired tables, and the comparison and per-run figures.
+the cross-model and paired tables, and the comparison and per-run figures.
 
 Usage:
   python scripts/make_report.py
@@ -27,11 +27,9 @@ import compare_models as cm  # noqa: E402
 import run_data as rd  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-PHASES = ("phase1", "phase2", "old")
 # Provider probe files (spike_*) are calibration runs, not experiment results.
 SKIP_PREFIXES = ("spike_",)
 RUN_COLUMNS = [
-    "phase",
     "file",
     "model",
     "provider",
@@ -72,7 +70,6 @@ MODEL_COMPARISON_COLUMNS = [
     "mean_latency_s",
 ]
 PAIRED_COLUMNS = [
-    "phase",
     "file",
     "model",
     "reasoning",
@@ -93,7 +90,6 @@ PAIRED_COLUMNS = [
 @dataclass(frozen=True)
 class RunInfo:
     path: Path
-    phase: str
     file: str
     model: str
     provider: str | None
@@ -120,12 +116,8 @@ def _relative_to_root(path):
     return Path(os.path.relpath(Path(path).resolve(), REPO_ROOT))
 
 
-def _phase_order(phase):
-    return PHASES.index(phase) if phase in PHASES else len(PHASES)
-
-
 def _run_sort_key(run):
-    return (_phase_order(run.phase), run.model, run.questions, run.reasoning, run.file)
+    return (run.model, run.questions, run.reasoning, run.file)
 
 
 def _csv_value(value):
@@ -147,41 +139,39 @@ def _write_csv(path, columns, rows):
 
 
 def discover_runs(results_dir):
-    """Summarize every readable run JSON under the phase directories."""
+    """Summarize every readable run JSON in the results directory."""
     runs = []
-    for phase in PHASES:
-        phase_dir = Path(results_dir) / phase
-        if not phase_dir.is_dir():
+    results_dir = Path(results_dir)
+    if not results_dir.is_dir():
+        return runs
+    for path in sorted(results_dir.glob("*.json")):
+        if path.name.startswith(SKIP_PREFIXES):
             continue
-        for path in sorted(phase_dir.rglob("*.json")):
-            if path.name.startswith(SKIP_PREFIXES):
-                continue
-            try:
-                data = rd.load_file(str(path))
-            except (OSError, ValueError) as exc:
-                print(f"skipping {path}: {exc}", file=sys.stderr)
-                continue
-            questions = data["questions"]
-            config = data["meta"].get("config")
-            provider = config.get("provider") if isinstance(config, dict) else None
-            complete = all(len(entries) == len(questions) for entries in data["results"].values())
-            stats = {
-                condition: rd.cond_stats(data["results"], questions, condition)
-                for condition in data["results"]
-            }
-            runs.append(
-                RunInfo(
-                    path=path,
-                    phase=phase,
-                    file=str(_relative_to_root(path)),
-                    model=data["meta"]["model"],
-                    provider=provider,
-                    questions=len(questions),
-                    reasoning=reasoning_label(config),
-                    complete=complete,
-                    stats=stats,
-                )
+        try:
+            data = rd.load_file(str(path))
+        except (OSError, ValueError) as exc:
+            print(f"skipping {path}: {exc}", file=sys.stderr)
+            continue
+        questions = data["questions"]
+        config = data["meta"].get("config")
+        provider = config.get("provider") if isinstance(config, dict) else None
+        complete = all(len(entries) == len(questions) for entries in data["results"].values())
+        stats = {
+            condition: rd.cond_stats(data["results"], questions, condition)
+            for condition in data["results"]
+        }
+        runs.append(
+            RunInfo(
+                path=path,
+                file=str(_relative_to_root(path)),
+                model=data["meta"]["model"],
+                provider=provider,
+                questions=len(questions),
+                reasoning=reasoning_label(config),
+                complete=complete,
+                stats=stats,
             )
+        )
     return sorted(runs, key=_run_sort_key)
 
 
@@ -193,7 +183,6 @@ def write_runs_csv(runs, path):
             stats = run.stats[condition]
             rows.append(
                 {
-                    "phase": run.phase,
                     "file": run.file,
                     "model": run.model,
                     "provider": run.provider,
@@ -222,10 +211,10 @@ def write_runs_csv(runs, path):
 def write_model_comparison_csv(runs, path):
     """Write one row per model and condition from compare_models runs."""
     model_order = {model: i for i, model in enumerate(cm.MODEL_ORDER)}
-    condition_order = {condition: i for i, condition in enumerate(cm.PHASE2_CONDITIONS)}
+    condition_order = {condition: i for i, condition in enumerate(cm.CONDITIONS)}
     rows = []
     for run in runs:
-        for condition in cm.PHASE2_CONDITIONS:
+        for condition in cm.CONDITIONS:
             metrics = run.metrics[condition]
             rows.append(
                 {
@@ -256,51 +245,8 @@ def write_model_comparison_csv(runs, path):
     return _write_csv(path, MODEL_COMPARISON_COLUMNS, rows)
 
 
-def write_paired_csv(runs, path, questions):
-    """Write paired phase-1 comparisons against baseline; return the row count."""
-    rows = []
-    for run in runs:
-        if run.phase != "phase1" or run.questions != questions:
-            continue
-        try:
-            data = rd.load_file(str(run.path))
-        except (OSError, ValueError) as exc:
-            print(f"skipping {run.path}: {exc}", file=sys.stderr)
-            continue
-        results = data["results"]
-        if "baseline" not in results:
-            continue
-        for condition in data["order"]:
-            if condition == "baseline":
-                continue
-            stats = rd.paired_stats(results, data["questions"], condition, reference="baseline")
-            if stats is None:
-                continue
-            rows.append(
-                {
-                    "phase": run.phase,
-                    "file": run.file,
-                    "model": run.model,
-                    "reasoning": run.reasoning,
-                    "questions": run.questions,
-                    "reference": "baseline",
-                    "condition": condition,
-                    "paired": stats["paired"],
-                    "fixed": stats["fixed"],
-                    "broke": stats["broke"],
-                    "discordant": stats["discordant"],
-                    "net_pp": stats["net_pp"],
-                    "ci_low_pp": stats["ci_low_pp"],
-                    "ci_high_pp": stats["ci_high_pp"],
-                    "p": stats["p"],
-                }
-            )
-    rows.sort(key=lambda row: (row["file"], row["condition"]))
-    return _write_csv(path, PAIRED_COLUMNS, rows)
-
-
-def write_phase2_paired_csv(runs, path, run_info):
-    """Paired phase-2 comparisons against baseline and the neutral control."""
+def write_paired_csv(runs, path, run_info):
+    """Paired comparisons against baseline and the neutral control."""
     by_path = {Path(info.path).resolve(): info for info in run_info}
     rows = []
     for run in runs:
@@ -313,8 +259,8 @@ def write_phase2_paired_csv(runs, path, run_info):
             print(f"skipping {run.path}: {exc}", file=sys.stderr)
             continue
         results = data["results"]
-        present = [reference for reference in ("baseline", "neutral") if reference in results]
-        for reference in present:
+        references = [reference for reference in ("baseline", "neutral") if reference in results]
+        for reference in references:
             for condition in data["order"]:
                 if condition == reference:
                     continue
@@ -323,7 +269,6 @@ def write_phase2_paired_csv(runs, path, run_info):
                     continue
                 rows.append(
                     {
-                        "phase": info.phase,
                         "file": info.file,
                         "model": run.model,
                         "reasoning": info.reasoning,
@@ -364,21 +309,13 @@ def write_comparison_figures(runs, figures_dir, questions, reasoning, dpi):
 
 
 def write_run_figures(runs, figures_dir):
-    """Write one token plot per complete phase-1/phase-2 run with reasoning data.
+    """Write one token plot per complete run with reasoning data.
 
-    Names are the run file stem; a stem shared by runs in different phases gets a
-    phase prefix. Figures for runs that no longer exist are removed, so the
-    directory always mirrors the current results tree.
+    Figures for runs that no longer exist are removed, so the directory always
+    mirrors the current results tree.
     """
     written = []
-    selected = [
-        run
-        for run in sorted(runs, key=_run_sort_key)
-        if run.phase in ("phase1", "phase2") and run.complete
-    ]
-    stem_counts = {}
-    for run in selected:
-        stem_counts[run.path.stem] = stem_counts.get(run.path.stem, 0) + 1
+    selected = [run for run in sorted(runs, key=_run_sort_key) if run.complete]
     for run in selected:
         try:
             data = rd.load_file(str(run.path))
@@ -389,10 +326,7 @@ def write_run_figures(runs, figures_dir):
             continue
         runs_dir = figures_dir / "runs"
         runs_dir.mkdir(parents=True, exist_ok=True)
-        name = run.path.stem
-        if stem_counts[name] > 1:
-            name = f"{run.phase}-{name}"
-        out_path = runs_dir / f"{name}.png"
+        out_path = runs_dir / f"{run.path.stem}.png"
         ar.plot_tokens(data, str(out_path))
         written.append(out_path)
     if written:
@@ -419,7 +353,7 @@ def parse_args(argv=None):
     parser.add_argument(
         "--allow-partial",
         action="store_true",
-        help="include phase-2 runs with missing entries in the comparison",
+        help="include runs with missing entries in the comparison",
     )
     parser.add_argument("--dpi", type=int, default=160)
     parser.add_argument(
@@ -450,10 +384,9 @@ def main(argv=None):
     print(f"Wrote {runs_path} ({runs_rows} rows)")
 
     model_runs = []
-    phase2_dir = results_dir / "phase2"
-    if phase2_dir.is_dir():
+    if results_dir.is_dir():
         model_runs, skipped = cm.discover_runs(
-            phase2_dir,
+            results_dir,
             questions=args.questions,
             reasoning=args.reasoning,
             allow_partial=args.allow_partial,
@@ -465,13 +398,9 @@ def main(argv=None):
     comparison_rows = write_model_comparison_csv(model_runs, comparison_path)
     print(f"Wrote {comparison_path} ({comparison_rows} rows)")
 
-    paired_path = tables_dir / f"phase1-{args.questions}q-paired.csv"
-    paired_rows = write_paired_csv(runs, paired_path, args.questions)
+    paired_path = tables_dir / f"paired-{args.questions}q.csv"
+    paired_rows = write_paired_csv(model_runs, paired_path, runs)
     print(f"Wrote {paired_path} ({paired_rows} rows)")
-
-    phase2_paired_path = tables_dir / f"phase2-{args.questions}q-paired.csv"
-    phase2_paired_rows = write_phase2_paired_csv(model_runs, phase2_paired_path, runs)
-    print(f"Wrote {phase2_paired_path} ({phase2_paired_rows} rows)")
 
     comparison_figures = write_comparison_figures(
         model_runs,
@@ -483,7 +412,7 @@ def main(argv=None):
     if comparison_figures:
         print(f"Wrote {len(comparison_figures)} comparison figures to {figures_dir}")
     else:
-        print(f"No complete {args.questions}-question phase2 runs; skipping comparison figures")
+        print(f"No complete {args.questions}-question runs; skipping comparison figures")
 
     if args.no_run_figures:
         print("Skipped run figures (--no-run-figures)")

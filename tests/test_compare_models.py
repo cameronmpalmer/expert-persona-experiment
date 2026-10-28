@@ -12,7 +12,7 @@ spec = importlib.util.spec_from_file_location("compare_models", SCRIPT)
 cm = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(cm)
 
-CONDS = cm.PHASE2_CONDITIONS
+CONDS = cm.CONDITIONS
 
 
 def question(index):

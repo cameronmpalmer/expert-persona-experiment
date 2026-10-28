@@ -26,8 +26,7 @@ def load_make_report():
 
 mr = load_make_report()
 
-CONDS_P1 = ("baseline", "expert", "layperson", "toddler")
-CONDS_P2 = mr.cm.PHASE2_CONDITIONS
+CONDS = mr.cm.CONDITIONS
 
 
 def question(index):
@@ -39,7 +38,7 @@ def question(index):
     }
 
 
-def make_doc(model, n=2, conditions=CONDS_P2, complete=True):
+def make_doc(model, n=2, conditions=CONDS, complete=True):
     questions = [question(i + 1) for i in range(n)]
     results = {}
     for condition in conditions:
@@ -81,14 +80,14 @@ def write_doc(root, name, doc):
 def build_tree(tmp):
     results = Path(tmp) / "results"
     write_doc(
-        results / "phase1",
-        "ling__2q__xhigh__20261001-000000.json",
-        make_doc("model/a", conditions=CONDS_P1),
-    )
-    write_doc(
-        results / "phase2",
+        results,
         "ling__2q__xhigh__20261002-000000.json",
         make_doc("inclusionai/ling-3.0-flash"),
+    )
+    write_doc(
+        results,
+        "glm__2q__xhigh__20261003-000000.json",
+        make_doc("z-ai/glm-5.3-flash"),
     )
     return results
 
@@ -118,30 +117,26 @@ class TestReasoningLabel(unittest.TestCase):
 
 
 class TestDiscoverRuns(unittest.TestCase):
-    def test_discovers_both_phases(self):
+    def test_discovers_runs_in_one_directory(self):
         with tempfile.TemporaryDirectory() as tmp:
             results = build_tree(tmp)
             runs = mr.discover_runs(results)
 
-        self.assertEqual([run.phase for run in runs], ["phase1", "phase2"])
-        by_phase = {run.phase: run for run in runs}
-        self.assertEqual(by_phase["phase1"].model, "model/a")
-        self.assertEqual(by_phase["phase1"].questions, 2)
-        self.assertEqual(by_phase["phase1"].reasoning, "xhigh")
-        self.assertTrue(by_phase["phase1"].complete)
-        self.assertTrue(by_phase["phase1"].file.endswith("ling__2q__xhigh__20261001-000000.json"))
-        self.assertEqual(by_phase["phase2"].model, "inclusionai/ling-3.0-flash")
-        self.assertEqual(by_phase["phase2"].provider, "test")
-        self.assertTrue(by_phase["phase2"].complete)
+        self.assertEqual(
+            [run.model for run in runs],
+            ["inclusionai/ling-3.0-flash", "z-ai/glm-5.3-flash"],
+        )
+        first = runs[0]
+        self.assertEqual(first.questions, 2)
+        self.assertEqual(first.reasoning, "xhigh")
+        self.assertEqual(first.provider, "test")
+        self.assertTrue(first.complete)
+        self.assertTrue(first.file.endswith("ling__2q__xhigh__20261002-000000.json"))
 
     def test_probe_files_are_skipped(self):
         with tempfile.TemporaryDirectory() as tmp:
             results = build_tree(tmp)
-            write_doc(
-                results / "phase2",
-                "spike_model__provider.json",
-                make_doc("model/spike"),
-            )
+            write_doc(results, "spike_model__provider.json", make_doc("model/spike"))
             runs = mr.discover_runs(results)
 
         self.assertEqual(len(runs), 2)
@@ -150,7 +145,7 @@ class TestDiscoverRuns(unittest.TestCase):
     def test_unreadable_file_is_skipped(self):
         with tempfile.TemporaryDirectory() as tmp:
             results = build_tree(tmp)
-            (results / "phase1" / "broken.json").write_text("{")
+            (results / "broken.json").write_text("{")
             stderr = io.StringIO()
             with redirect_stderr(stderr):
                 runs = mr.discover_runs(results)
@@ -172,9 +167,9 @@ class TestWriters(unittest.TestCase):
                 self.assertEqual(reader.fieldnames, mr.RUN_COLUMNS)
                 rows = list(reader)
 
-        self.assertEqual(count, 9)
-        self.assertEqual(len(rows), 9)
-        self.assertEqual(rows[0]["phase"], "phase1")
+        self.assertEqual(count, 10)
+        self.assertEqual(len(rows), 10)
+        self.assertNotIn("phase", mr.RUN_COLUMNS)
         self.assertEqual(rows[0]["questions"], "2")
         self.assertEqual(rows[0]["complete"], "yes")
         self.assertEqual(rows[0]["condition"], "baseline")
@@ -182,7 +177,7 @@ class TestWriters(unittest.TestCase):
     def test_model_comparison_csv_header_and_rows(self):
         with tempfile.TemporaryDirectory() as tmp:
             results = build_tree(tmp)
-            runs, skipped = mr.cm.discover_runs(results / "phase2", questions=2, reasoning="xhigh")
+            runs, skipped = mr.cm.discover_runs(results, questions=2, reasoning="xhigh")
             out = Path(tmp) / "tables" / "model-comparison-2q.csv"
             count = mr.write_model_comparison_csv(runs, out)
 
@@ -192,51 +187,35 @@ class TestWriters(unittest.TestCase):
                 rows = list(reader)
 
         self.assertEqual(skipped, [])
-        self.assertEqual(count, 5)
-        self.assertEqual(len(rows), 5)
+        self.assertEqual(count, len(CONDS) * 2)
+        self.assertEqual(len(rows), len(CONDS) * 2)
         self.assertEqual(rows[0]["model"], "inclusionai/ling-3.0-flash")
         self.assertEqual(rows[0]["condition"], "neutral")
         self.assertEqual(rows[0]["n"], "2")
         self.assertEqual(rows[0]["mean_latency_s"], "1.5")
 
-    def test_paired_csv_header_and_rows(self):
+    def test_paired_csv_uses_both_references(self):
         with tempfile.TemporaryDirectory() as tmp:
             results = build_tree(tmp)
             runs = mr.discover_runs(results)
-            out = Path(tmp) / "tables" / "phase1-2q-paired.csv"
-            count = mr.write_paired_csv(runs, out, 2)
+            model_runs, _ = mr.cm.discover_runs(results, questions=2, reasoning="xhigh")
+            out = Path(tmp) / "tables" / "paired-2q.csv"
+            count = mr.write_paired_csv(model_runs, out, runs)
 
             with open(out, newline="") as f:
                 reader = csv.DictReader(f)
                 self.assertEqual(reader.fieldnames, mr.PAIRED_COLUMNS)
                 rows = list(reader)
 
-        self.assertEqual(count, 3)
-        self.assertEqual(len(rows), 3)
-        self.assertTrue(all(row["reference"] == "baseline" for row in rows))
-        self.assertTrue(all(row["paired"] == "2" for row in rows))
-
-    def test_phase2_paired_csv_uses_both_references(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            results = build_tree(tmp)
-            runs = mr.discover_runs(results)
-            model_runs, _ = mr.cm.discover_runs(results / "phase2", questions=2, reasoning="xhigh")
-            out = Path(tmp) / "tables" / "phase2-2q-paired.csv"
-            count = mr.write_phase2_paired_csv(model_runs, out, runs)
-
-            with open(out, newline="") as f:
-                rows = list(csv.DictReader(f))
-
-        self.assertEqual(count, 8)
+        self.assertEqual(count, 16)
         self.assertEqual({row["reference"] for row in rows}, {"baseline", "neutral"})
-        self.assertTrue(all(row["phase"] == "phase2" for row in rows))
         self.assertTrue(all(row["questions"] == "2" for row in rows))
         self.assertTrue(all(row["reasoning"] == "xhigh" for row in rows))
 
     def test_paired_csv_is_header_only_without_rows(self):
         with tempfile.TemporaryDirectory() as tmp:
-            out = Path(tmp) / "tables" / "phase1-5000q-paired.csv"
-            count = mr.write_paired_csv([], out, 5000)
+            out = Path(tmp) / "tables" / "paired-5000q.csv"
+            count = mr.write_paired_csv([], out, [])
 
             with open(out, newline="") as f:
                 reader = csv.DictReader(f)
@@ -247,12 +226,10 @@ class TestWriters(unittest.TestCase):
 
 
 class TestRunFigures(unittest.TestCase):
-    def test_names_shared_stems_per_phase_and_removes_stale(self):
+    def test_writes_one_figure_per_stem_and_removes_stale(self):
         with tempfile.TemporaryDirectory() as tmp:
             results = Path(tmp) / "results"
-            doc = make_doc("model/a", conditions=CONDS_P1)
-            write_doc(results / "phase1", "same__2q__xhigh.json", doc)
-            write_doc(results / "phase2", "same__2q__xhigh.json", doc)
+            write_doc(results, "same__2q__xhigh.json", make_doc("model/a"))
             figures = Path(tmp) / "figures"
             stale = figures / "runs" / "gone.png"
             stale.parent.mkdir(parents=True)
@@ -264,8 +241,7 @@ class TestRunFigures(unittest.TestCase):
             with mock.patch.object(mr.ar, "plot_tokens", side_effect=fake_plot):
                 written = mr.write_run_figures(mr.discover_runs(results), figures)
 
-            names = sorted(path.name for path in written)
-            self.assertEqual(names, ["phase1-same__2q__xhigh.png", "phase2-same__2q__xhigh.png"])
+            self.assertEqual([path.name for path in written], ["same__2q__xhigh.png"])
             self.assertFalse(stale.exists())
 
 
@@ -336,7 +312,7 @@ class TestMain(unittest.TestCase):
             self.assertEqual(code, 0)
             self.assertTrue((tables / "runs.csv").exists())
             self.assertTrue((tables / "model-comparison-2q.csv").exists())
-            self.assertTrue((tables / "phase1-2q-paired.csv").exists())
+            self.assertTrue((tables / "paired-2q.csv").exists())
             self.assertFalse((figures / "runs").exists())
             plot_comparison.assert_called_once()
             plot_panels.assert_called_once()
