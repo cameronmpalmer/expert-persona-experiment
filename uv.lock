@@ -384,13 +384,13 @@ source = { virtual = "." }
 dependencies = [
     { name = "matplotlib" },
     { name = "pyarrow" },
-    { name = "pytest-cov" },
     { name = "tqdm" },
 ]
 
 [package.dev-dependencies]
 dev = [
     { name = "coverage" },
+    { name = "pytest-cov" },
     { name = "ruff" },
 ]
 
@@ -398,13 +398,13 @@ dev = [
 requires-dist = [
     { name = "matplotlib", specifier = ">=3.11.2" },
     { name = "pyarrow", specifier = ">=26.0.0" },
-    { name = "pytest-cov", specifier = ">=7.1.0" },
     { name = "tqdm", specifier = ">=4.70.1" },
 ]
 
 [package.metadata.requires-dev]
 dev = [
     { name = "coverage", specifier = ">=7.16.2" },
+    { name = "pytest-cov", specifier = ">=7.1.0" },
     { name = "ruff", specifier = ">=0.17.0" },
 ]
 

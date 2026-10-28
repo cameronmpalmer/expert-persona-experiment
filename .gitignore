@@ -10,3 +10,4 @@ lancedb/
 models/
 .env
 .playwright-mcp
+htmlcov/

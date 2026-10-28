@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Sample a reproducible subset of questions from an MMLU-Pro style parquet.
 
-Defaults reproduce the committed study sample: the nine study categories,
-seed 42, 44 questions from data/mmlu_pro_test.parquet. Point --input/--output at
-other parquet files and use --categories and the --*-col flags to sample custom
-datasets.
+Defaults match the runner: the nine study categories, seed 42, 50 questions from
+data/mmlu_pro_test.parquet, written to the count-bearing sample name. Point
+--input/--output at other parquet files and use --categories and the --*-col flags
+to sample custom datasets.
 """
 
 import argparse
@@ -17,10 +17,10 @@ from pathlib import Path
 import pyarrow.parquet as pq
 
 SEED = 42
-N = 44
-# The study's category list. mmlu_pro_test.parquet spells the fourth one
-# "computer science" (with a space), so "computer_science" never matches there;
-# keeping it verbatim reproduces the committed sample.
+N = 50
+# The study's category list, spelled as mmlu_pro_test.parquet spells it. An
+# earlier list used "computer_science" (underscore), which never matched this
+# parquet and silently dropped that category; the committed samples include it.
 STUDY_CATEGORIES = {
     "physics",
     "chemistry",

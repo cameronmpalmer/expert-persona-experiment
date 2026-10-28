@@ -1,6 +1,7 @@
 """Tests for the blank-versus-format-error split in analyze_results.py."""
 
 import importlib.util
+import io
 import json
 import os
 import re
@@ -553,7 +554,7 @@ class TestSignificance(unittest.TestCase):
             self.assertIn("McNemar", run())
             self.assertNotIn("McNemar", run("--no-significance"))
 
-    def test_json_includes_paired_vs_baseline(self):
+    def test_json_includes_paired_vs_reference(self):
         with tempfile.TemporaryDirectory() as tmp:
             d = ar.load_file(self._fixture(tmp))
             import io
@@ -562,9 +563,38 @@ class TestSignificance(unittest.TestCase):
             buf = io.StringIO()
             with redirect_stdout(buf):
                 ar.render_json([d])
-            cond = json.loads(buf.getvalue())[0]["conditions"]["expert"]
-            self.assertEqual(cond["paired_vs_baseline"]["discordant"], 3)
-            self.assertAlmostEqual(cond["paired_vs_baseline"]["net_pp"], 25.0)
+            entry = json.loads(buf.getvalue())[0]
+            cond = entry["conditions"]["expert"]
+            self.assertEqual(entry["reference"], "baseline")
+            self.assertEqual(cond["paired_vs_reference"]["discordant"], 3)
+            self.assertAlmostEqual(cond["paired_vs_reference"]["net_pp"], 25.0)
+            self.assertAlmostEqual(cond["delta_pp_vs_reference"], 25.0)
+
+    def test_json_honours_reference_and_confidence(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._fixture(tmp)
+            import io
+            from contextlib import redirect_stdout
+
+            def run(*extra):
+                argv = sys.argv
+                sys.argv = ["analyze_results.py", path, "--json", *extra]
+                buf = io.StringIO()
+                try:
+                    with redirect_stdout(buf):
+                        ar.main()
+                finally:
+                    sys.argv = argv
+                return json.loads(buf.getvalue())[0]
+
+            entry = run("--reference", "expert", "--confidence", "0.99")
+            self.assertEqual(entry["reference"], "expert")
+            expert = entry["conditions"]["expert"]
+            baseline = entry["conditions"]["baseline"]
+            self.assertIsNone(expert["paired_vs_reference"])
+            self.assertEqual(baseline["paired_vs_reference"]["discordant"], 3)
+            self.assertAlmostEqual(baseline["paired_vs_reference"]["net_pp"], -25.0)
+            self.assertAlmostEqual(baseline["delta_pp_vs_reference"], -25.0)
 
 
 class TestTokenUsage(unittest.TestCase):
@@ -682,6 +712,85 @@ class TestReasonRatio(unittest.TestCase):
             self.assertEqual(s["lower"], 0)
             self.assertEqual(s["p"], 0.5)
 
+    def _neutral_fixture(self, tmp):
+        q = [
+            {"id": "1", "category": "x", "options": ["a", "b"], "answer_index": 0},
+            {"id": "2", "category": "x", "options": ["a", "b"], "answer_index": 0},
+        ]
+        res = {
+            "baseline": {
+                str(i): {
+                    "answer": "A",
+                    "correct": True,
+                    "raw": "A",
+                    "usage": {"reasoning_tokens": 100},
+                }
+                for i in (1, 2)
+            },
+            "neutral": {
+                str(i): {
+                    "answer": "A",
+                    "correct": True,
+                    "raw": "A",
+                    "usage": {"reasoning_tokens": 150},
+                }
+                for i in (1, 2)
+            },
+            "expert": {
+                str(i): {
+                    "answer": "A",
+                    "correct": True,
+                    "raw": "A",
+                    "usage": {"reasoning_tokens": 200},
+                }
+                for i in (1, 2)
+            },
+        }
+        return write_results(tmp, res, questions=q, name="neutral.json")
+
+    def test_ratio_against_neutral(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            d = ar.load_file(self._neutral_fixture(tmp))
+            s = ar.reason_ratio_stats(d["results"], d["questions"], "expert", reference="neutral")
+            self.assertAlmostEqual(s["ratio"], 200 / 150)
+
+    def test_token_table_against_neutral(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            d = ar.load_file(self._neutral_fixture(tmp))
+            import io
+            from contextlib import redirect_stdout
+
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                ar.render_tokens(d, reference="neutral")
+            out = buf.getvalue()
+            self.assertIn("Token usage vs neutral", out)
+            self.assertIn("sign p", out)
+            self.assertIn("95% CI = mean reasoning-token ratio", out)
+            self.assertIn("-50", out)  # baseline is 50 below neutral
+            self.assertIn("+50", out)  # expert is 50 above neutral
+
+    def test_token_table_reports_missing_reference(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            d = ar.load_file(self._fixture(tmp))
+            import io
+            from contextlib import redirect_stdout
+
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                ar.render_tokens(d, reference="neutral")
+            self.assertIn("reference condition 'neutral' not found", buf.getvalue())
+
+    def test_median_diff_against_neutral(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            d = ar.load_file(self._neutral_fixture(tmp))
+            self.assertEqual(
+                ar.median_reasoning_diff(
+                    d["results"], d["questions"], "expert", reference="neutral"
+                ),
+                50,
+            )
+
     def test_ratio_undefined_when_baseline_zero(self):
         with tempfile.TemporaryDirectory() as tmp:
             q = [
@@ -728,6 +837,194 @@ class TestReasonRatio(unittest.TestCase):
             self.assertIn("2.00", out)  # ratio
             self.assertIn("[2.00,2.00]", out)  # zero-variance CI
             self.assertIn("0.5", out)  # sign-test p
+
+
+class TestReferenceComparisons(unittest.TestCase):
+    def _fixture(self, tmp):
+        q = [
+            {"id": "1", "category": "x", "options": ["a", "b"], "answer_index": 0},
+            {"id": "2", "category": "x", "options": ["a", "b"], "answer_index": 0},
+        ]
+        res = {
+            "baseline": {
+                "1": {
+                    "answer": "A",
+                    "correct": True,
+                    "raw": "A",
+                    "usage": {"reasoning_tokens": 100},
+                },
+                "2": {
+                    "answer": "B",
+                    "correct": False,
+                    "raw": "B",
+                    "usage": {"reasoning_tokens": 100},
+                },
+            },
+            "neutral": {
+                "1": {
+                    "answer": "A",
+                    "correct": True,
+                    "raw": "A",
+                    "usage": {"reasoning_tokens": 150},
+                },
+                "2": {
+                    "answer": "A",
+                    "correct": True,
+                    "raw": "A",
+                    "usage": {"reasoning_tokens": 150},
+                },
+            },
+            "expert": {
+                "1": {
+                    "answer": "B",
+                    "correct": False,
+                    "raw": "B",
+                    "usage": {"reasoning_tokens": 200},
+                },
+                "2": {
+                    "answer": "A",
+                    "correct": True,
+                    "raw": "A",
+                    "usage": {"reasoning_tokens": 200},
+                },
+            },
+        }
+        return write_results(tmp, res, questions=q, name="reference.json")
+
+    def test_paired_stats_against_neutral(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            d = ar.load_file(self._fixture(tmp))
+            s = ar.paired_stats(d["results"], d["questions"], "expert", reference="neutral")
+            self.assertEqual(s["fixed"], 0)
+            self.assertEqual(s["broke"], 1)
+            self.assertEqual(s["paired"], 2)
+            self.assertAlmostEqual(s["net_pp"], -50.0)
+
+    def test_change_matrix_against_neutral(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            d = ar.load_file(self._fixture(tmp))
+            m = ar.change_matrix(d["results"], "expert", reference="neutral")
+            self.assertEqual(m["changed"], 1)
+            self.assertEqual(m["RtoW"], 1)
+            self.assertEqual(m["same"], 1)
+
+    def test_summary_labels_use_reference(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            d = ar.load_file(self._fixture(tmp))
+            import io
+            from contextlib import redirect_stdout
+
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                ar.render_summary(d, significance=True, reference="neutral")
+            out = buf.getvalue()
+            self.assertIn("Paired test vs neutral", out)
+            self.assertIn("Answer changes vs neutral", out)
+            self.assertNotIn("Paired test vs baseline", out)
+            self.assertNotIn("Answer changes vs baseline", out)
+
+    def test_missing_reference_skips_accuracy_tables(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            q = [{"id": "1", "category": "x", "options": ["a", "b"], "answer_index": 0}]
+            res = {
+                "baseline": {
+                    "1": {"answer": "A", "correct": True, "raw": "A"},
+                },
+                "expert": {
+                    "1": {"answer": "A", "correct": True, "raw": "A"},
+                },
+            }
+            d = ar.load_file(write_results(tmp, res, questions=q, name="missing.json"))
+            import io
+            from contextlib import redirect_stdout
+
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                ar.render_summary(d, significance=True, reference="neutral")
+            out = buf.getvalue()
+            self.assertIn("Paired test: reference condition 'neutral' not found", out)
+            self.assertIn("Answer changes: reference condition 'neutral' not found", out)
+
+
+class TestConfidenceLevels(unittest.TestCase):
+    def _ratio_fixture(self, tmp):
+        q = [
+            {"id": str(i), "category": "x", "options": ["a", "b"], "answer_index": 0}
+            for i in range(1, 5)
+        ]
+        baseline = [100, 120, 140, 160]
+        expert = [150, 200, 190, 260]
+        res = {
+            "baseline": {
+                str(i + 1): {
+                    "answer": "A",
+                    "correct": True,
+                    "raw": "A",
+                    "usage": {"reasoning_tokens": value},
+                }
+                for i, value in enumerate(baseline)
+            },
+            "expert": {
+                str(i + 1): {
+                    "answer": "A",
+                    "correct": True,
+                    "raw": "A",
+                    "usage": {"reasoning_tokens": value},
+                }
+                for i, value in enumerate(expert)
+            },
+        }
+        return write_results(tmp, res, questions=q, name="confidence.json")
+
+    def test_ratio_ci_widens_at_99(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            d = ar.load_file(self._ratio_fixture(tmp))
+            ci95 = ar.reason_ratio_stats(d["results"], d["questions"], "expert", confidence=0.95)
+            ci99 = ar.reason_ratio_stats(d["results"], d["questions"], "expert", confidence=0.99)
+            self.assertAlmostEqual(ci95["ratio"], 200 / 130)
+            self.assertLess(ci99["ci_low"], ci95["ci_low"])
+            self.assertGreater(ci99["ci_high"], ci95["ci_high"])
+
+    def test_paired_ci_widens_at_99(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            q = [
+                {"id": str(i), "category": "x", "options": ["a", "b"], "answer_index": 0}
+                for i in range(1, 11)
+            ]
+            baseline = {str(i): {"answer": "B", "correct": False, "raw": "B"} for i in range(1, 11)}
+            expert = {
+                str(i): {
+                    "answer": "A" if i <= 6 else "B",
+                    "correct": i <= 6,
+                    "raw": "A" if i <= 6 else "B",
+                }
+                for i in range(1, 11)
+            }
+            d = ar.load_file(
+                write_results(
+                    tmp,
+                    {"baseline": baseline, "expert": expert},
+                    questions=q,
+                    name="paired.json",
+                )
+            )
+            ci95 = ar.paired_stats(d["results"], d["questions"], "expert", confidence=0.95)
+            ci99 = ar.paired_stats(d["results"], d["questions"], "expert", confidence=0.99)
+            self.assertLess(ci99["ci_low_pp"], ci95["ci_low_pp"])
+            self.assertGreater(ci99["ci_high_pp"], ci95["ci_high_pp"])
+
+    def test_token_table_label_uses_confidence(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            d = ar.load_file(self._ratio_fixture(tmp))
+            import io
+            from contextlib import redirect_stdout
+
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                ar.render_tokens(d, confidence=0.99)
+            out = buf.getvalue()
+            self.assertIn("99% CI = mean reasoning-token ratio", out)
+            self.assertNotIn("95% CI", out)
 
 
 class TestTokenMedians(unittest.TestCase):
@@ -1121,10 +1418,51 @@ class TestPlots(unittest.TestCase):
             argv = sys.argv
             sys.argv = ["analyze_results.py", a, b, "--plot", os.path.join(tmp, "x.png")]
             try:
-                with self.assertRaises(SystemExit):
+                from contextlib import redirect_stderr
+
+                with self.assertRaises(SystemExit), redirect_stderr(io.StringIO()):
                     ar.main()
             finally:
                 sys.argv = argv
+
+
+class TestConfidenceValidation(unittest.TestCase):
+    def _run(self, path, level):
+        argv = sys.argv
+        sys.argv = ["analyze_results.py", path, "--confidence", level]
+        try:
+            from contextlib import redirect_stderr, redirect_stdout
+
+            with (
+                self.assertRaises(SystemExit),
+                redirect_stdout(io.StringIO()),
+                redirect_stderr(io.StringIO()),
+            ):
+                ar.main()
+        finally:
+            sys.argv = argv
+
+    def test_rejects_ambiguous_and_out_of_range_levels(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = write_results(tmp, {"baseline": {}}, questions=[], name="c.json")
+            for level in ("1", "1.5", "100", "0", "-0.5"):
+                with self.subTest(level=level):
+                    self._run(path, level)
+
+    def test_accepts_fraction_and_percent(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = write_results(tmp, {"baseline": {}}, questions=[], name="c.json")
+            for level in ("0.95", "99"):
+                with self.subTest(level=level):
+                    argv = sys.argv
+                    sys.argv = ["analyze_results.py", path, "--confidence", level]
+                    try:
+                        from contextlib import redirect_stdout
+
+                        with redirect_stdout(io.StringIO()):
+                            ar.main()
+                    finally:
+                        sys.argv = argv
 
 
 if __name__ == "__main__":

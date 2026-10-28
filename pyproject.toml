@@ -1,7 +1,7 @@
 [project]
 name = "persona-experiment"
 version = "0.1.0"
-description = "Add your description here"
+description = "Mini-replication of the Playing Pretend expert-persona experiment on MMLU-Pro"
 readme = "README.md"
 authors = [
     { name = "palmtrey", email = "cameron@cameronmpalmer.com" }
@@ -10,13 +10,13 @@ requires-python = ">=3.14"
 dependencies = [
     "matplotlib>=3.11.2",
     "pyarrow>=26.0.0",
-    "pytest-cov>=7.1.0",
     "tqdm>=4.70.1",
 ]
 
 [dependency-groups]
 dev = [
     "coverage>=7.16.2",
+    "pytest-cov>=7.1.0",
     "ruff>=0.17.0",
 ]
 
@@ -35,5 +35,12 @@ source = ["scripts"]
 [tool.coverage.report]
 # Report only on modules the suite tests; measure all of scripts/. Add modules
 # here as they gain tests.
-include = ["scripts/run_experiment.py", "scripts/sample_mmlu.py", "scripts/analyze_results.py"]
+include = [
+  "scripts/run_experiment.py",
+  "scripts/sample_mmlu.py",
+  "scripts/analyze_results.py",
+  "scripts/compare_models.py",
+  "scripts/run_data.py",
+  "scripts/make_report.py",
+]
 show_missing = true

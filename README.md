@@ -6,9 +6,10 @@ plus a follow-up on what expert instructions cost.
 
 **Question:** does telling a model it is an expert make it answer more accurately,
 and what does it cost?
-**Answer so far:** no accuracy gain. With reasoning on, expert instructions also
-spend more tokens (and therefore more money and time). Low-knowledge personas both
-cost more and hurt accuracy.
+**Answer so far:** no accuracy gain. With reasoning on, the expert prompt can spend
+more tokens and money (Ling +36% versus the neutral control at 5,000 questions,
++21% versus baseline in phase 1), but that cost is model-specific. Low-knowledge
+personas both cost more and hurt accuracy.
 
 The work is split into two phases:
 
@@ -24,11 +25,14 @@ The work is split into two phases:
   (physics, chemistry, biology, computer science, engineering, math, economics,
   law, history), seeded and reproducible (`seed=42`). Samples live in
   `data/question_samples/mmlu_pro_sample_<n>.json` for n in 50, 100, 500, 1000,
-  2000, 5000; the runner defaults to the 50-question rung.
-- **Models:** the current runner defaults to `inclusionai/ling-3.0-flash` via
-  OpenRouter, thinking off by default (pass `--reasoning-effort` to enable). The
-  earliest results below come from local Ollama runs (`qwen3.5:9b`,
-  `qwen3.5:0.8b`, temperature 0, thinking disabled).
+  2000, 2500, 5000; the runner defaults to the 50-question rung.
+- **Models:** phase 2 ran `anthropic/claude-haiku-5.5`,
+  `deepseek/deepseek-v4-flash`, `inclusionai/ling-3.0-flash`, and
+  `z-ai/glm-5.3-flash` through OpenRouter at 5,000 questions, reasoning xhigh.
+  The runner defaults to `inclusionai/ling-3.0-flash`, thinking off by default
+  (pass `--reasoning-effort` to enable). The earliest results below come from
+  local Ollama runs (`qwen3.5:9b`, `qwen3.5:0.8b`, temperature 0, thinking
+  disabled).
 - **Design:** paired, so every question is answered under every condition and any
   difference is attributable to the system prompt. Conditions are the built-in
   four unless `--conditions-file` supplies another set.
@@ -63,16 +67,70 @@ prompt, so any difference between them reflects content rather than length.
 
 ## Results
 
-**Phase 2 (expert wording variants) has not been run yet.** Its conditions are in
-`data/condition_variants/phase_2_conditions_expert_variants.json` and `results/phase2/`
-is empty. The results below are phase 1 and the original local runs.
+Every number below comes from the run files listed in `tables/runs.csv`, and every
+figure from `figures/`. Raw run files are not committed (1.4 GB of JSON); see
+[Reproducing the tables and figures](#reproducing-the-tables-and-figures).
+
+### Phase 2: expert wording variants, 5,000 questions, reasoning xhigh
+
+Four models, five conditions, the same 5,000 paired questions. Cells are accuracy
+over all calls, with the number of answered calls in parentheses: a lower answered
+count means more empty or truncated replies, which cost accuracy but say nothing
+about knowledge.
+
+| Model | baseline | neutral | expert_short | expert | expert_long |
+|---|---|---|---|---|---|
+| Claude Haiku 5.5 | 88.4% (4,984) | 87.9% (4,984) | 88.0% (4,985) | 88.0% (4,982) | 88.0% (4,987) |
+| Deepseek V4 Flash | 77.9% (4,447) | 83.7% (4,695) | 83.2% (4,677) | 83.6% (4,667) | 83.0% (4,626) |
+| Ling 3.0 Flash | 81.7% (4,726) | 81.9% (4,750) | 81.2% (4,696) | 80.8% (4,656) | 81.5% (4,683) |
+| GLM 5.3 Flash | 84.7% (4,927) | 84.9% (4,920) | 85.1% (4,936) | 84.7% (4,923) | 84.9% (4,921) |
+
+Mean reasoning tokens and total run cost per condition:
+
+| Model | baseline | neutral | expert_short | expert | expert_long |
+|---|---|---|---|---|---|
+| Claude Haiku 5.5 | 882 / $2.39 | 899 / $2.45 | 934 / $2.52 | 863 / $2.36 | 970 / $2.66 |
+| Deepseek V4 Flash | 7,047 / $1.09 | 4,901 / $0.76 | 5,162 / $0.80 | 5,080 / $0.79 | 5,343 / $0.84 |
+| Ling 3.0 Flash | 2,158 / $1.04 | 1,923 / $0.94 | 2,363 / $1.11 | 2,608 / $1.21 | 2,562 / $1.19 |
+| GLM 5.3 Flash | 1,258 / $1.26 | 1,279 / $1.28 | 1,218 / $1.22 | 1,294 / $1.29 | 1,314 / $1.31 |
+
+Three things follow from the tables.
+
+**No expert wording improves accuracy significantly.** Against the length-matched
+neutral control, the generic expert prompt moves accuracy by +0.1 pp (Claude),
+-0.1 pp (Deepseek), -1.1 pp (Ling, McNemar p = 0.002), and -0.2 pp (GLM). Claude's
+shortest expert prompt is the best case at +0.2 pp. Those gains are noise-sized;
+the two significant comparisons are both negative (Ling expert at -1.1 pp and
+Deepseek expert_long at -0.8 pp, p = 0.043).
+
+**The Deepseek baseline is a truncation artifact, not a persona effect.** 545 of
+its 5,000 baseline replies hit the 32,768-token cap and returned nothing, far more
+than any prompted condition (neutral truncates least, at 298). Its all-calls
+accuracy therefore rises
+5.9 pp from baseline to neutral (p < 1e-36) while answered-call accuracy barely
+moves, and against neutral the expert prompt is -0.1 pp (p = 0.79). Treat any
+claim that a system prompt helps Deepseek as an answered-rate effect.
+
+**The expert prompt's token cost is model-specific.** Against neutral, reasoning
+tokens change by +36% (Ling), +4% (Deepseek), +1% (GLM), and -4% (Claude). Phase 1
+found a 21% increase for Ling; phase 2 reproduces that for Ling and not for the
+other models. There is no general "expert personas cost more" rule, only a
+consistent "expert personas do not answer better" one.
+
+![Cross-model comparison](figures/model-comparison-5000q.png)
+
+Standalone versions of each panel are in `figures/model-comparison-5000q-accuracy.png`,
+`-cost.png`, `-reasoning.png`, `-latency.png`, and `-accuracy-vs-cost.png`.
+Per-run token distributions are in `figures/runs/`.
+
 
 ### Phase 1 on OpenRouter, 5,000 questions
 
 Reasoning off (`--reasoning-effort none`): accuracy is flat across conditions
 (59.8%, 59.7%, 59.2%, 59.8% for baseline, expert, layperson, toddler; all
 McNemar p >= 0.07), and because completions are about two tokens the conditions
-cost the same. Nothing to separate.
+cost the same. Nothing to separate. The paired tests are in
+`tables/phase1-5000q-paired.csv`.
 
 Reasoning on (`--reasoning-effort xhigh`), 5,000 questions:
 
@@ -87,8 +145,8 @@ Read this as: the expert persona buys no accuracy and costs about 17% more, almo
 entirely extra reasoning tokens (mean +443 per call, median only +22, so the mean
 is tail-driven). The low-knowledge personas cost a little more and lose accuracy,
 and the toddler loss is significant. The effect sizes are not fully stable across
-runs of different size, so treat the token penalty as "real in direction, roughly
-7 to 17% in magnitude".
+runs of different size, so treat the reasoning-token penalty as "real in direction,
+roughly 9 to 21% in magnitude" (the cost penalty is roughly 7 to 17%).
 
 ### Original local Ollama replication (44 questions)
 
@@ -106,9 +164,15 @@ sample ladder starts at 50.
 
 ### Caveats
 
-- Single model and single provider (OpenRouter, usually Novita), one seeded draw
-  per run, temperature 0. Run-to-run token use varies, so the cost magnitude is
-  approximate.
+- The four phase 2 models ran behind different upstream providers (Anthropic
+  native, Baidu fp8 for Deepseek, open-inference fp4 for GLM, and Ling's default
+  OpenRouter pool). Model and provider are therefore confounded in the cross-model
+  panels; the within-model condition comparisons are paired and unaffected.
+- One seeded draw per run at temperature 0 (seed 861 for the phase 2 runs), so
+  run-to-run token use varies and the cost magnitude is approximate.
+- Replies that hit the 32,768-token cap are recorded as blanks and never retried.
+  That is a harness limit, not a model property, and it is why the answered count
+  is reported beside every accuracy.
 - Token effects are heavy-tailed: the mean increase is much larger than the median
   for the same condition.
 - Latency is logged but is confounded by run order and provider load, so it is not
@@ -127,7 +191,8 @@ make setup        # uv sync
 ### API key
 
 `scripts/run_experiment.py` reads `OPENROUTER_API_KEY_PROJECT` from the
-environment. The repo ships a git-ignored `.env`; load it before running:
+environment. Create a git-ignored `.env` with that variable and load it before
+running:
 
 ```bash
 set -a; . ./.env; set +a
@@ -205,6 +270,8 @@ watch for 429 backoff.
 .venv/bin/python scripts/analyze_results.py results/<file>.json --questions     # per question
 .venv/bin/python scripts/analyze_results.py results/<file>.json --categories    # by MMLU category
 .venv/bin/python scripts/analyze_results.py results/<file>.json --reasoning     # reasoning stats
+.venv/bin/python scripts/analyze_results.py results/<file>.json --reference neutral  # comparisons vs neutral
+.venv/bin/python scripts/analyze_results.py results/<file>.json --confidence 0.99  # 99% intervals
 .venv/bin/python scripts/analyze_results.py A.json B.json --compare             # side by side
 .venv/bin/python scripts/analyze_results.py results/<file>.json --json          # machine-readable
 .venv/bin/python scripts/analyze_results.py results/<file>.json --format-errors out.tsv
@@ -220,23 +287,32 @@ are handled. The summary prints, in order:
   `Blank(stop)`, `FmtErr`, `Missing`, `Acc(ans)` (answered only), `Acc(all)`, and
   `Cost`.
 - **Total cost** across conditions.
-- **Token usage vs baseline:** mean prompt and reasoning tokens, the `R med` column
+- **Token usage vs the reference:** mean prompt and reasoning tokens, the `R med` column
   (median reasoning tokens, far below the mean because these counts are skewed), the
   mean deltas (`dPrompt`, `dReason`), `dR med` (median of the per-question reasoning
-  differences), and the reasoning-token ratio with a 95% interval and a p-value. The
-  interval is a delta-method interval on the log ratio; the p-value is the exact sign
-  test on the per-question differences. With reasoning off the reasoning columns are
-  zero and the ratio and p-value show `n/a`. Completion tokens are deliberately not
+  differences), and the reasoning-token ratio with a 95% interval and a sign-test
+  p-value. The interval is a delta-method interval on the log mean ratio; the sign
+  test asks whether the per-question differences move consistently in one direction,
+  so it can be significant while the mean-ratio interval includes 1. Intervals are
+  95% by default; `--confidence 0.99` widens them to 99%. With reasoning off the
+  reasoning columns are zero and the ratio and sign-test p-value show `n/a`.
+  Completion tokens are deliberately not
   reported: the visible answer is a single letter, and the provider's completion and
   reasoning fields disagree with each other (reasoning exceeds completion in a large
-  fraction of calls), so reasoning tokens are the measurable quantity.
-- **Paired significance:** each condition against baseline with the exact McNemar
+  fraction of calls), so reasoning tokens are the measurable quantity. The
+  reference is baseline by default; `--reference neutral` uses the length-matched
+  non-expert control, which isolates the expert wording effect in phase 2. The
+  paired accuracy test and answer-change table use the same reference.
+- **Paired significance:** each condition against the reference (baseline unless
+  `--reference` says otherwise) with the exact McNemar
   test on discordant pairs, showing `Fixed`, `Broke`, the discordant total, the net
-  difference in percentage points, a 95% interval, and p. This is the only place the
+  difference in percentage points, a 95% interval (or the level set by
+  `--confidence`), and p. This is the only place the
   per-condition net is reported; the old standalone deltas line was removed because
   it duplicated this column. Printed by default; `--no-significance` hides it, and
-  `--json` carries it under `paired_vs_baseline`.
-- **Answer changes vs baseline** (answered pairs only): `Changed`, `W->R`, `R->W`,
+  `--json` carries it under `paired_vs_reference` (with the chosen reference in the
+  top-level `reference` field), and the accuracy delta as `delta_pp_vs_reference`.
+- **Answer changes vs the reference** (answered pairs only): `Changed`, `W->R`, `R->W`,
   `W->W`, `Same`.
 
 Entries that name no option are split two ways. `Blank(len)` and `Blank(stop)` are
@@ -269,7 +345,8 @@ exactly one input file.
 `--format-errors OUT` dumps every `FmtErr` row to a tab-separated file with
 columns condition, id, category, gold, the raw reply, `regex_letter`,
 `would_be_correct`, finish reason, provider, reasoning tokens, and the question.
-The last two of those match the reply against the option texts by word-boundary
+The `regex_letter` and `would_be_correct` columns match the reply against the
+option texts by word-boundary
 regex after lowercasing and stripping LaTeX, so `3.54 eV` matches an option written
 `3.54 $\mathrm{eV}$`, `100` does not match inside `1000`, and `8.0` does not match
 inside `18.0`. It is a heuristic, not a parser.
@@ -279,16 +356,67 @@ matches the gold option counts as correct. The summary adds a `Credit` column an
 a scoring banner, the per-category table follows the same rule, and `--json` adds a
 `credit_format_errors` flag and a per-condition `credited` count.
 
+### Compare models
+
+`scripts/compare_models.py` selects the latest complete 5,000-question phase 2 run
+for each model and writes one combined four-panel PNG plus five standalone panel
+PNGs: accuracy, total cost by condition, mean reasoning tokens, average call
+latency, and accuracy against cost. It reads the run files directly, so no
+preprocessing is needed.
+
+```bash
+.venv/bin/python scripts/compare_models.py
+.venv/bin/python scripts/compare_models.py --list
+.venv/bin/python scripts/compare_models.py --conditions baseline,expert
+.venv/bin/python scripts/compare_models.py --models anthropic/claude-haiku-5.5,z-ai/glm-5.3-flash
+```
+
+The default output is `results/model-comparison-5000q.png`; the standalone panels
+are written beside it as `-accuracy.png`, `-cost.png`, `-reasoning.png`,
+`-latency.png`, and `-accuracy-vs-cost.png`. Use `--results-dir` to point at another results tree,
+`--out` to choose the combined PNG path, and `--no-split` to skip the standalone
+panels. Complete runs are required by default; `--allow-partial` includes in-progress
+files and counts missing calls as wrong. `make report` (below) calls this script and
+writes the figures into `figures/` instead.
+
+### Reproducing the tables and figures
+
+`scripts/make_report.py` rebuilds every artifact the writeup cites from the raw
+runs:
+
+```bash
+make report        # or: .venv/bin/python scripts/make_report.py
+```
+
+It writes:
+
+- `tables/runs.csv`: one row per experiment run and condition (correct, answered,
+  blanks split by cap versus empty stop, format errors, missing, accuracy over
+  answered calls and over all calls, prompt and reasoning token means, median
+  reasoning tokens, cost). Provider probe files (`spike_*`) are skipped.
+- `tables/model-comparison-5000q.csv`: the four-model phase 2 table.
+- `tables/phase1-5000q-paired.csv` and `tables/phase2-5000q-paired.csv`: exact
+  McNemar tests against baseline, and against the neutral control in phase 2.
+- `figures/model-comparison-5000q.png` plus five standalone panels, and one
+  token-distribution figure per complete run that recorded reasoning tokens in
+  `figures/runs/`.
+
+Point it at another tree with `--results-dir`, change the headline rung with
+`--questions` and `--reasoning`, and skip the per-run plots with `--no-run-figures`.
+The raw `results/` tree is not tracked: the phase 2 JSON files alone are over 1 GB
+and the largest single file is 504 MB, so the committed artifacts are the small,
+deterministic outputs above.
+
 ### Regenerate the question sample
 
 `scripts/sample_mmlu.py` samples from the parquet and writes the question JSON. Its
-default count is 44, and the default output name carries the count
+default count is 50, and the default output name carries the count
 (`data/question_samples/mmlu_pro_sample_<n>.json`) so a new rung does not overwrite
 an existing one, and it confirms before writing (`--yes` skips the prompt):
 
 ```bash
 # write the 50-question rung the runner reads by default
-.venv/bin/python scripts/sample_mmlu.py --n 50 --yes
+.venv/bin/python scripts/sample_mmlu.py --yes
 
 # another dataset: custom paths, count, seed, categories, and column names
 .venv/bin/python scripts/sample_mmlu.py \
@@ -310,14 +438,15 @@ make test           # unit tests with coverage
 make lint           # ruff check
 make format         # ruff format
 make format-noedit  # verify formatting without writing
+make check          # lint, then test
+make coverage-html  # write an HTML coverage report to htmlcov/
 make precommit      # format-noedit + lint + test (run by the git hook)
 make install-hooks  # point git at the tracked .githooks/pre-commit
+make report         # regenerate tables/ and figures/ from results/
 make clean          # remove caches
 ```
 
-The Makefile header also mentions `check` and `coverage-html`; those two are not
-actually defined, so use `precommit` and `coverage` directly. Tests live in
-`tests/` (stdlib `unittest`, run under `coverage`).
+Tests live in `tests/` (stdlib `unittest`, run under `coverage`).
 
 ## Files
 
@@ -325,14 +454,19 @@ actually defined, so use `precommit` and `coverage` directly. Tests live in
   `--conditions-file` for phase 2 sets)
 - `scripts/analyze_results.py`: CLI analysis (summary, tokens, significance,
   per-question, per-category, reasoning stats, compare, format-error dump, `--json`)
+- `scripts/compare_models.py`: cross-model four-panel comparison of 5,000-question runs
+- `scripts/make_report.py`: regenerates `tables/` and `figures/` from the raw runs
+- `scripts/run_data.py`: shared result loading and statistics used by the CLIs
 - `scripts/sample_mmlu.py`: seeded sampler from the MMLU-Pro parquet (needs pyarrow)
 - `data/question_samples/`: the question samples (`mmlu_pro_sample_<n>.json`)
 - `data/condition_variants/`: phase 2 condition sets
 - `data/mmlu_pro_test.parquet`: source parquet (git-ignored)
-- `results/old/`: original local Ollama runs
-- `results/phase1/`: phase 1 OpenRouter runs
-- `results/phase2/`: phase 2 runs (empty so far)
-- `tests/`: unit tests for the runner, sampler, and analyzer
+- `tables/`: committed derived statistics (`runs.csv`, model comparison, paired tests)
+- `figures/`: committed comparison and per-run figures
+- `results/old/`: original local Ollama runs (git-ignored)
+- `results/phase1/`: phase 1 OpenRouter runs (git-ignored)
+- `results/phase2/`: phase 2 runs (git-ignored)
+- `tests/`: unit tests for the runner, sampler, analyzer, and report generator
 - `Makefile`, `pyproject.toml`: tasks and project/config
 
 The original local runner (`experiment.py`) and earlier cloud script

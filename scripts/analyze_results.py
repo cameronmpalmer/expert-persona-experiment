@@ -20,6 +20,8 @@ Usage:
   python3 analyze_results.py FILE --questions          per-question matrix
   python3 analyze_results.py FILE --categories         accuracy by MMLU category
   python3 analyze_results.py FILE --reasoning          thinking/reasoning stats
+  python3 analyze_results.py FILE --reference neutral  comparisons vs neutral
+  python3 analyze_results.py FILE --confidence 0.99    99% confidence intervals
   python3 analyze_results.py FILE1 FILE2 --compare     side-by-side per condition
   python3 analyze_results.py FILE --json               machine-readable summary
   python3 analyze_results.py FILE --format-errors OUT  dump format errors to OUT (TSV)
@@ -33,466 +35,78 @@ the question text) and can be combined with any view. --credit-format-errors
 counts a format error as correct when its reply matches the gold option, so
 accuracy reflects answers given in the wrong shape. A paired significance table
 (McNemar exact on discordant pairs) prints by default; pass --no-significance to
-hide it.
+hide it. The comparison tables compare against baseline by default; pass
+--reference neutral to use the length-matched non-expert control instead, which
+isolates the expert wording effect in phase 2. Intervals are 95% by default;
+pass --confidence 0.99 (or 99) for 99% intervals.
 """
 
-import csv
+import argparse
 import json
 import math
 import os
-import re
-import statistics
 import sys
+from pathlib import Path
 
-DEFAULT_ORDER = [
-    "baseline",
-    "neutral",
-    "expert_short",
-    "expert",
-    "expert_long",
-    "layperson",
-    "toddler",
+_SCRIPT_DIR = Path(__file__).resolve().parent
+if str(_SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(_SCRIPT_DIR))
+
+from run_data import (  # noqa: E402
+    DEFAULT_ORDER,
+    FORMAT_ERROR_COLUMNS,
+    REASON_KEYS,
+    change_matrix,
+    classify_entry,
+    cond_stats,
+    detect_api,
+    entry_is_correct,
+    format_error_rows,
+    load_file,
+    match_option_index,
+    mcnemar_exact,
+    mean_latency,
+    median_reasoning_diff,
+    normalize_option,
+    paired_stats,
+    question_options,
+    reason_ratio_stats,
+    reason_text,
+    reasoning_stats,
+    thinking_label,
+    token_series,
+    write_format_errors,
+    z_for_confidence,
+)
+
+__all__ = [
+    "DEFAULT_ORDER",
+    "FORMAT_ERROR_COLUMNS",
+    "REASON_KEYS",
+    "change_matrix",
+    "classify_entry",
+    "cond_stats",
+    "detect_api",
+    "entry_is_correct",
+    "format_error_rows",
+    "load_file",
+    "match_option_index",
+    "mcnemar_exact",
+    "mean_latency",
+    "median_reasoning_diff",
+    "normalize_option",
+    "paired_stats",
+    "question_options",
+    "reason_ratio_stats",
+    "reason_text",
+    "reasoning_stats",
+    "thinking_label",
+    "token_series",
+    "write_format_errors",
+    "z_for_confidence",
 ]
-REASON_KEYS = ("reasoning", "thinking")
-FORMAT_ERROR_COLUMNS = [
-    "condition",
-    "id",
-    "category",
-    "gold",
-    "answer_text",
-    "regex_letter",
-    "would_be_correct",
-    "finish_reason",
-    "provider",
-    "reasoning_tokens",
-    "question",
-]
-
-
-# ---------------------------------------------------------------- loading ---
-
-
-def load_file(path):
-    with open(path) as f:
-        data = json.load(f)
-    questions = data.get("questions", [])
-    results = data.get("results", {})
-    order = [c for c in DEFAULT_ORDER if c in results]
-    for c in results:
-        if c not in order:
-            order.append(c)
-    meta = {
-        "path": path,
-        "model": data.get("model", "?"),
-        "think": data.get("think"),
-        "api": data.get("api"),
-        "config": data.get("config"),
-    }
-    return {"meta": meta, "questions": questions, "results": results, "order": order}
-
-
-def detect_api(results):
-    # Explicit api field wins (only the OpenRouter script writes it)
-    for entries in results.values():
-        for e in entries.values():
-            if "reasoning" in e:
-                return "openrouter"
-            if "thinking" in e:
-                return "ollama"
-    # Only the local Ollama script omits the api field
-    return "ollama"
-
-
-def thinking_label(meta):
-    """Thinking setting for the header, e.g. "on (xhigh)" or "off".
-
-    Local Ollama files record an explicit `think` boolean. OpenRouter files do
-    not, so derive it from the run config (thinking is off only when the reasoning
-    effort is `none`). "?" means the setting could not be determined.
-    """
-    if meta.get("think") is not None:
-        return "on" if meta["think"] else "off"
-    config = meta.get("config")
-    if not isinstance(config, dict):
-        return "?"
-    mode = config.get("reasoning_mode")
-    value = config.get("reasoning_value")
-    if mode is None:
-        return "?"
-    if mode == "effort" and value == "none":
-        return "off"
-    if mode == "max_tokens" and value is not None:
-        return f"on (max_tokens {value})"
-    return f"on ({value})" if value is not None else "on"
-
-
-def reason_text(entry):
-    for k in REASON_KEYS:
-        v = entry.get(k)
-        if v:
-            return v
-    return ""
-
-
-def classify_entry(entry):
-    """Classify one entry as answered, blank, or a format parsing error.
-
-    answered - the parser found an option letter
-    blank    - the completion field is empty, so there was nothing to parse
-    format   - the completion is non-blank but holds no option letter
-    """
-    if entry.get("answer") != "?":
-        return "answered"
-    if (entry.get("raw") or "").strip():
-        return "format"
-    return "blank"
-
-
-def question_options(question):
-    """The option texts for a question, tolerating a JSON-encoded string."""
-    options = question.get("options") or []
-    if isinstance(options, str):
-        try:
-            options = json.loads(options)
-        except ValueError:
-            options = [options]
-    return options
-
-
-def entry_is_correct(entry, question, credit_format_errors=False):
-    """Correctness of one entry, optionally crediting matched format errors."""
-    if entry.get("correct"):
-        return True
-    if not credit_format_errors or classify_entry(entry) != "format":
-        return False
-    return (
-        match_option_index(entry.get("raw"), question_options(question)) == question["answer_index"]
-    )
-
-
-def cond_stats(results, questions, cond, credit_format_errors=False):
-    entries = results.get(cond, {})
-    n = len(questions)
-    correct = sum(1 for e in entries.values() if e.get("correct"))
-    blank_len = sum(
-        1
-        for e in entries.values()
-        if classify_entry(e) == "blank" and e.get("finish_reason") == "length"
-    )
-    blank_total = sum(1 for e in entries.values() if classify_entry(e) == "blank")
-    blank_stop = blank_total - blank_len
-    blank = blank_total
-    format_errors = sum(1 for e in entries.values() if classify_entry(e) == "format")
-    credited = 0
-    if credit_format_errors:
-        credited = sum(
-            1
-            for q in questions
-            if (e := entries.get(q["id"])) is not None
-            and classify_entry(e) == "format"
-            and entry_is_correct(e, q, credit_format_errors=True)
-        )
-        correct += credited
-        format_errors -= credited
-    answered = len(entries) - blank - format_errors
-    wrong = answered - correct
-    missing = n - len(entries)
-    costs = [
-        (e.get("usage") or {}).get("cost")
-        for e in entries.values()
-        if (e.get("usage") or {}).get("cost") is not None
-    ]
-
-    def token_values(key):
-        vals = []
-        for e in entries.values():
-            v = (e.get("usage") or {}).get(key)
-            if v is not None:
-                vals.append(v)
-        return vals
-
-    pv = token_values("prompt_tokens")
-    rv = token_values("reasoning_tokens")
-    return {
-        "n": n,
-        "entries": len(entries),
-        "correct": correct,
-        "wrong": wrong,
-        "answered": answered,
-        "blank": blank,
-        "blank_len": blank_len,
-        "blank_stop": blank_stop,
-        "format_errors": format_errors,
-        "credited": credited,
-        "missing": missing,
-        "cost": sum(costs),
-        "cost_entries": len(costs),
-        "mean_prompt_tokens": (sum(pv) / len(pv)) if pv else None,
-        "mean_reasoning_tokens": (sum(rv) / len(rv)) if rv else None,
-        "median_prompt_tokens": statistics.median(pv) if pv else None,
-        "median_reasoning_tokens": statistics.median(rv) if rv else None,
-        "acc_answered": (correct / answered) if answered else None,
-        "acc_all": (correct / n) if n else None,
-    }
-
-
-def mcnemar_exact(fixed, broke):
-    """Two-sided exact McNemar (sign test) p-value on discordant pairs.
-
-    Falls back to a continuity-corrected normal approximation above 1000
-    discordant pairs, where the exact binomial becomes slow.
-    """
-    m = fixed + broke
-    if m == 0:
-        return 1.0
-    if m > 1000:
-        z = (abs(fixed - broke) - 1) / math.sqrt(m)
-        return max(0.0, min(1.0, math.erfc(abs(z) / math.sqrt(2))))
-    k = min(fixed, broke)
-    return min(1.0, 2 * sum(math.comb(m, i) for i in range(k + 1)) / 2**m)
-
-
-def reason_ratio_stats(results, questions, cond):
-    """Reasoning-token ratio of a condition against baseline, with CI and p.
-
-    Ratio is mean(condition) / mean(baseline) on shared questions. The 95%
-    interval is a delta-method interval on the log ratio (fast and stable for
-    these heavy-tailed counts). The p-value is the exact sign test on the
-    per-question differences, so it answers whether reasoning moved at all.
-    Returns None when baseline reasoning is zero, since the ratio is undefined.
-    """
-    base = results.get("baseline", {})
-    entries = results.get(cond, {})
-    xs, ys = [], []
-    for q in questions:
-        qid = q["id"]
-        if qid not in base or qid not in entries:
-            continue
-        x = (entries[qid].get("usage") or {}).get("reasoning_tokens")
-        y = (base[qid].get("usage") or {}).get("reasoning_tokens")
-        if x is None or y is None:
-            continue
-        xs.append(x)
-        ys.append(y)
-    n = len(xs)
-    if n < 2:
-        return None
-    mx = sum(xs) / n
-    my = sum(ys) / n
-    if my <= 0:
-        return None
-    higher = sum(1 for a, b in zip(xs, ys, strict=True) if a > b)
-    lower = sum(1 for a, b in zip(xs, ys, strict=True) if a < b)
-    vx = sum((a - mx) ** 2 for a in xs) / (n - 1)
-    vy = sum((b - my) ** 2 for b in ys) / (n - 1)
-    cxy = sum((a - mx) * (b - my) for a, b in zip(xs, ys, strict=True)) / (n - 1)
-    var_log = max(0.0, vx / (n * mx * mx) + vy / (n * my * my) - 2 * cxy / (n * mx * my))
-    se_log = math.sqrt(var_log)
-    ratio = mx / my
-    return {
-        "ratio": ratio,
-        "ci_low": ratio * math.exp(-1.96 * se_log),
-        "ci_high": ratio * math.exp(1.96 * se_log),
-        "higher": higher,
-        "lower": lower,
-        "p": mcnemar_exact(higher, lower),
-    }
-
-
-def median_reasoning_diff(results, questions, cond):
-    """Median of the per-question reasoning-token difference vs baseline.
-
-    Robust companion to the mean difference, which a few long traces can carry.
-    Returns None when there are no paired questions with reasoning tokens.
-    """
-    base = results.get("baseline", {})
-    entries = results.get(cond, {})
-    diffs = []
-    for q in questions:
-        qid = q["id"]
-        if qid not in base or qid not in entries:
-            continue
-        x = (entries[qid].get("usage") or {}).get("reasoning_tokens")
-        y = (base[qid].get("usage") or {}).get("reasoning_tokens")
-        if x is None or y is None:
-            continue
-        diffs.append(x - y)
-    return statistics.median(diffs) if diffs else None
-
-
-def paired_stats(results, questions, cond, credit_format_errors=False):
-    """Paired comparison of one condition against baseline on shared questions.
-
-    Returns fixed (baseline wrong, condition right), broke (the reverse), the
-    discordant total, the net difference in percentage points, a 95% interval
-    from the McNemar normal approximation, and the exact McNemar p-value.
-    """
-    base = results.get("baseline", {})
-    entries = results.get(cond, {})
-    fixed = broke = paired = 0
-    for q in questions:
-        qid = q["id"]
-        if qid not in base or qid not in entries:
-            continue
-        paired += 1
-        b = entry_is_correct(base[qid], q, credit_format_errors)
-        c = entry_is_correct(entries[qid], q, credit_format_errors)
-        if c and not b:
-            fixed += 1
-        elif b and not c:
-            broke += 1
-    if not paired:
-        return None
-    disc = fixed + broke
-    net = (fixed - broke) / paired
-    se = math.sqrt(disc - (fixed - broke) ** 2 / paired) / paired if disc else 0.0
-    return {
-        "paired": paired,
-        "fixed": fixed,
-        "broke": broke,
-        "discordant": disc,
-        "net_pp": net * 100,
-        "ci_low_pp": (net - 1.96 * se) * 100,
-        "ci_high_pp": (net + 1.96 * se) * 100,
-        "p": mcnemar_exact(fixed, broke),
-    }
-
-
-def change_matrix(results, cond):
-    base = results.get("baseline", {})
-    entries = results.get(cond, {})
-    m = {"changed": 0, "WtoR": 0, "RtoW": 0, "WtoW": 0, "same": 0, "pairs": 0}
-    for qid, e in entries.items():
-        if qid not in base:
-            continue
-        b = base[qid]
-        if classify_entry(e) != "answered" or classify_entry(b) != "answered":
-            continue  # only answered pairs
-        m["pairs"] += 1
-        if e["answer"] == b["answer"]:
-            m["same"] += 1
-        else:
-            m["changed"] += 1
-            m[("R" if b["correct"] else "W") + "to" + ("R" if e["correct"] else "W")] += 1
-    return m
-
-
-def reasoning_stats(results, questions, cond):
-    entries = results.get(cond, {})
-    texts = []
-    for e in entries.values():
-        t = reason_text(e)
-        if t.strip():
-            texts.append((len(t), e.get("correct"), e.get("answer")))
-    if not texts:
-        return None
-    lens = [t[0] for t in texts]
-    by_correct = {
-        True: [t[0] for t in texts if t[1] is True and t[2] != "?"],
-        False: [t[0] for t in texts if t[1] is False and t[2] != "?"],
-    }  # t[2] is the parsed answer; "?" means no option letter was found
-    out = {
-        "with_reasoning": len(texts),
-        "total_entries": len(entries),
-        "mean_len": sum(lens) / len(lens),
-        "max_len": max(lens),
-    }
-    for c, name in ((True, "correct"), (False, "wrong")):
-        ls = by_correct[c]
-        out[f"mean_len_{name}"] = (sum(ls) / len(ls)) if ls else None
-    return out
-
-
-# ------------------------------------------------------- format error dump ---
-
-
-def normalize_option(text):
-    """Lowercase an option or reply and strip LaTeX so text forms match.
-
-    Options often carry math markup (`3.54 $\\mathrm{eV}$`) while the model's
-    reply is plain (`3.54 eV`); both reduce to `3.54 ev` here.
-    """
-    s = str(text).lower()
-    s = re.sub(r"\\[a-zA-Z]+", " ", s)  # \mathrm, \text, \frac, ...
-    s = re.sub(r"[$}{]", " ", s)  # math delimiters and braces
-    s = s.replace("\\", " ")
-    return re.sub(r"\s+", " ", s).strip(" .,:;")
-
-
-def match_option_index(reply, options):
-    """Index of the option whose text the reply matches, or None.
-
-    Word-boundary regex on normalized text, so `100` does not match inside
-    `1000` and `8.0` does not match inside `18.0`.
-    """
-    reply_norm = normalize_option(reply)
-    if not reply_norm:
-        return None
-    for i, opt in enumerate(options):
-        opt_norm = normalize_option(opt)
-        if not opt_norm:
-            continue
-        if re.search(r"(?<!\w)" + re.escape(opt_norm) + r"(?!\w)", reply_norm):
-            return i
-    return None
-
-
-def format_error_rows(files):
-    """One row per format parsing error across all files and conditions."""
-    rows = []
-    for d in files:
-        for cond in d["order"]:
-            entries = d["results"].get(cond, {})
-            for q in d["questions"]:
-                e = entries.get(q["id"])
-                if not e or classify_entry(e) != "format":
-                    continue
-                usage = e.get("usage") or {}
-                gold = chr(65 + q["answer_index"])
-                options = question_options(q)
-                idx = match_option_index(e.get("raw"), options)
-                rows.append(
-                    {
-                        "condition": cond,
-                        "id": q["id"],
-                        "category": q.get("category", "?"),
-                        "gold": gold,
-                        "answer_text": " ".join((e.get("raw") or "").split()),
-                        "regex_letter": chr(65 + idx) if idx is not None else "-",
-                        "would_be_correct": (
-                            "yes" if idx is not None and chr(65 + idx) == gold else "no"
-                        ),
-                        "finish_reason": e.get("finish_reason"),
-                        "provider": e.get("provider"),
-                        "reasoning_tokens": usage.get("reasoning_tokens"),
-                        "question": " ".join((q.get("question") or "").split()),
-                    }
-                )
-    return rows
-
-
-def write_format_errors(files, path):
-    """Write format parsing errors to a tab-separated file; return the count."""
-    rows = format_error_rows(files)
-    with open(path, "w", newline="") as f:
-        writer = csv.writer(f, delimiter="\t")
-        writer.writerow(FORMAT_ERROR_COLUMNS)
-        for r in rows:
-            writer.writerow([r[c] for c in FORMAT_ERROR_COLUMNS])
-    return len(rows)
-
 
 # ---------------------------------------------------------------- plots ---
-
-
-def token_series(d, cond, key):
-    """Token counts for one condition and usage key, skipping missing values."""
-    out = []
-    for e in d["results"].get(cond, {}).values():
-        v = (e.get("usage") or {}).get(key)
-        if v is not None:
-            out.append(v)
-    return out
 
 
 def plot_tokens(d, out_path):
@@ -653,25 +267,38 @@ def fmt_delta(cond_val, base_val):
     return f"{delta:>+9.0f}"
 
 
-def render_tokens(d, stats=None):
-    """Token usage per condition, with deltas against baseline.
+def render_tokens(d, stats=None, reference="baseline", confidence=0.95):
+    """Token usage per condition, with deltas against a reference condition.
 
     Cost and speed both follow from tokens: cost is tokens times price, speed
     is tokens per unit time. The means here use every entry that recorded usage.
+    The default reference is baseline; neutral is the length-matched control
+    for phase 2 wording comparisons.
     """
     results, order, questions = d["results"], d["order"], d["questions"]
     if stats is None:
         stats = {cond: cond_stats(results, questions, cond) for cond in order}
-    base = stats.get("baseline")
-    if not base or base["mean_reasoning_tokens"] is None:
+    base = stats.get(reference)
+    if base is None:
+        print()
+        print(f"Token usage: reference condition '{reference}' not found; skipping.")
         return
+    if base["mean_reasoning_tokens"] is None:
+        print()
+        print(f"Token usage: reference condition '{reference}' has no reasoning tokens; skipping.")
+        return
+    ci_label = f"{confidence * 100:g}% CI"
     print()
-    print("Token usage vs baseline (tokens per call; means, plus median reasoning):")
+    print(f"Token usage vs {reference} (tokens per call; means, plus median reasoning):")
+    print(
+        f"{ci_label} = mean reasoning-token ratio; "
+        "sign p = exact sign test on per-question differences."
+    )
     w = cond_col_width(order)
     hdr = (
         f"{'Condition':<{w}}{'Prompt':>8}{'Reason':>8}{'R med':>7}"
         f"{'dPrompt':>9}{'dReason':>9}{'dR med':>8}"
-        f"{'Reason x':>10}{'95% CI':>14}{'p':>9}"
+        f"{'Reason x':>10}{ci_label:>14}{'sign p':>9}"
     )
     print(hdr)
     print("-" * len(hdr))
@@ -682,14 +309,20 @@ def render_tokens(d, stats=None):
             f"{fmt_int(s['mean_reasoning_tokens']):>8}"
             f"{fmt_int(s['median_reasoning_tokens']):>7}"
         )
-        if cond == "baseline":
+        if cond == reference:
             row += f"{'-':>9}{'-':>9}{'-':>8}{'1.00':>10}{'-':>14}{'-':>9}"
         else:
-            rr = reason_ratio_stats(results, questions, cond)
+            rr = reason_ratio_stats(
+                results,
+                questions,
+                cond,
+                reference=reference,
+                confidence=confidence,
+            )
             ratio_str = f"{rr['ratio']:.2f}" if rr else "n/a"
             ci_str = f"[{rr['ci_low']:.2f},{rr['ci_high']:.2f}]" if rr else "n/a"
             p_str = (f"{rr['p']:.3f}" if rr["p"] >= 0.001 else "<0.001") if rr else "n/a"
-            md = median_reasoning_diff(results, questions, cond)
+            md = median_reasoning_diff(results, questions, cond, reference=reference)
             md_str = f"{md:>+8.0f}" if md is not None else f"{'n/a':>8}"
             row += (
                 fmt_delta(s["mean_prompt_tokens"], base["mean_prompt_tokens"])
@@ -700,19 +333,31 @@ def render_tokens(d, stats=None):
         print(row)
 
 
-def render_significance(d, credit_format_errors=False):
-    order = [c for c in d["order"] if c != "baseline"]
+def render_significance(d, credit_format_errors=False, reference="baseline", confidence=0.95):
+    if reference not in d["results"]:
+        print()
+        print(f"Paired test: reference condition '{reference}' not found; skipping.")
+        return
+    order = [c for c in d["order"] if c != reference]
     if not order:
         return
     print()
     note = " (format errors credited)" if credit_format_errors else ""
-    print(f"Paired test vs baseline (McNemar exact on discordant pairs){note}:")
+    ci_label = f"{confidence * 100:g}% CI"
+    print(f"Paired test vs {reference} (McNemar exact on discordant pairs){note}:")
     w = cond_col_width(d["order"])
-    hdr = f"{'Condition':<{w}}{'Fixed':>7}{'Broke':>7}{'Disc':>6}{'Net':>10}{'95% CI':>20}{'p':>9}"
+    hdr = f"{'Condition':<{w}}{'Fixed':>7}{'Broke':>7}{'Disc':>6}{'Net':>10}{ci_label:>20}{'p':>9}"
     print(hdr)
     print("-" * len(hdr))
     for cond in order:
-        s = paired_stats(d["results"], d["questions"], cond, credit_format_errors)
+        s = paired_stats(
+            d["results"],
+            d["questions"],
+            cond,
+            credit_format_errors,
+            reference=reference,
+            confidence=confidence,
+        )
         if not s:
             continue
         ci = f"[{s['ci_low_pp']:+.2f}, {s['ci_high_pp']:+.2f}]"
@@ -723,7 +368,13 @@ def render_significance(d, credit_format_errors=False):
         )
 
 
-def render_summary(d, credit_format_errors=False, significance=True):
+def render_summary(
+    d,
+    credit_format_errors=False,
+    significance=True,
+    reference="baseline",
+    confidence=0.95,
+):
     meta, results, order, questions = d["meta"], d["results"], d["order"], d["questions"]
     think = thinking_label(meta)
     w = cond_col_width(order)
@@ -763,18 +414,28 @@ def render_summary(d, credit_format_errors=False, significance=True):
     cost_line += f", {missing_cost} without)" if missing_cost else ")"
     print(cost_line)
 
-    render_tokens(d, stats)
+    render_tokens(d, stats, reference=reference, confidence=confidence)
 
     if significance:
-        render_significance(d, credit_format_errors=credit_format_errors)
+        render_significance(
+            d,
+            credit_format_errors=credit_format_errors,
+            reference=reference,
+            confidence=confidence,
+        )
 
     print()
-    print("Answer changes vs baseline (answered pairs only):")
+    if reference not in results:
+        print(f"Answer changes: reference condition '{reference}' not found; skipping.")
+        return
+    print(f"Answer changes vs {reference} (answered pairs only):")
     hdr2 = f"{'Condition':<{w}}{'Changed':>8}{'W->R':>7}{'R->W':>7}{'W->W':>7}{'Same':>7}"
     print(hdr2)
     print("-" * len(hdr2))
-    for cond in order[1:]:
-        m = change_matrix(results, cond)
+    for cond in order:
+        if cond == reference:
+            continue
+        m = change_matrix(results, cond, reference=reference)
         print(
             f"{cond:<{w}}{m['changed']:>8}{m['WtoR']:>7}{m['RtoW']:>7}{m['WtoW']:>7}{m['same']:>7}"
         )
@@ -898,7 +559,13 @@ def render_compare(files, credit_format_errors=False):
     print()
 
 
-def render_json(files, credit_format_errors=False, significance=True):
+def render_json(
+    files,
+    credit_format_errors=False,
+    significance=True,
+    reference="baseline",
+    confidence=0.95,
+):
     out = []
     for d in files:
         results, order, questions = d["results"], d["order"], d["questions"]
@@ -908,21 +575,31 @@ def render_json(files, credit_format_errors=False, significance=True):
             "think": d["meta"]["think"],
             "api": detect_api(results),
             "n": len(questions),
+            "reference": reference,
             "credit_format_errors": credit_format_errors,
             "conditions": {},
         }
-        base_stats = cond_stats(
-            results, questions, "baseline", credit_format_errors=credit_format_errors
-        )
-        base_acc = base_stats["acc_all"]
+        base_acc = None
+        if reference in results:
+            base_stats = cond_stats(
+                results, questions, reference, credit_format_errors=credit_format_errors
+            )
+            base_acc = base_stats["acc_all"]
         for cond in order:
             s = cond_stats(results, questions, cond, credit_format_errors=credit_format_errors)
-            s["deltas_pp_vs_baseline"] = None
+            s["delta_pp_vs_reference"] = None
             if base_acc is not None and s["acc_all"] is not None:
-                s["deltas_pp_vs_baseline"] = round((s["acc_all"] - base_acc) * 100, 1)
-            s["paired_vs_baseline"] = (
-                paired_stats(results, questions, cond, credit_format_errors)
-                if significance and cond != "baseline"
+                s["delta_pp_vs_reference"] = round((s["acc_all"] - base_acc) * 100, 1)
+            s["paired_vs_reference"] = (
+                paired_stats(
+                    results,
+                    questions,
+                    cond,
+                    credit_format_errors,
+                    reference=reference,
+                    confidence=confidence,
+                )
+                if significance and cond != reference
                 else None
             )
             entry["conditions"][cond] = s
@@ -930,30 +607,48 @@ def render_json(files, credit_format_errors=False, significance=True):
     print(json.dumps(out, indent=2))
 
 
+def parse_args(argv=None):
+    parser = argparse.ArgumentParser(description="Analyze persona experiment results.")
+    parser.add_argument("files", metavar="FILE", nargs="*", help="result JSON file(s)")
+    parser.add_argument("--questions", action="store_true", help="per-question matrix")
+    parser.add_argument("--categories", action="store_true", help="accuracy by MMLU category")
+    parser.add_argument("--reasoning", action="store_true", help="thinking/reasoning stats")
+    parser.add_argument("--compare", action="store_true", help="side-by-side per condition")
+    parser.add_argument("--json", action="store_true", help="machine-readable summary")
+    parser.add_argument("--format-errors", metavar="OUT", default=None)
+    parser.add_argument("--credit-format-errors", action="store_true")
+    parser.add_argument("--plot", metavar="OUT", default=None)
+    parser.add_argument("--reference", metavar="COND", default="baseline")
+    parser.add_argument("--confidence", metavar="LEVEL", default="0.95")
+    parser.add_argument("--no-significance", action="store_true")
+    return parser.parse_args(argv)
+
+
 def main():
-    args = sys.argv[1:]
-    fmt_path = None
-    if "--format-errors" in args:
-        i = args.index("--format-errors")
-        if i + 1 >= len(args):
-            print("error: --format-errors needs an output path", file=sys.stderr)
-            sys.exit(1)
-        fmt_path = args[i + 1]
-        del args[i : i + 2]
-    plot_path = None
-    if "--plot" in args:
-        i = args.index("--plot")
-        if i + 1 >= len(args):
-            print("error: --plot needs an output path", file=sys.stderr)
-            sys.exit(1)
-        plot_path = args[i + 1]
-        del args[i : i + 2]
-    credit = "--credit-format-errors" in args
-    significance = "--no-significance" not in args
-    flags = {
-        f: f in args for f in ("--questions", "--categories", "--reasoning", "--compare", "--json")
-    }
-    paths = [a for a in args if not a.startswith("--")]
+    args = parse_args(sys.argv[1:])
+    try:
+        confidence = float(args.confidence)
+    except ValueError:
+        print("error: --confidence must be a number, e.g. 0.95 or 99", file=sys.stderr)
+        sys.exit(1)
+    if 1 < confidence < 2:
+        print(
+            "error: --confidence must be between 0 and 1, or between 2 and 100",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    if confidence > 1:
+        confidence /= 100
+    if not 0 < confidence < 1:
+        print(
+            "error: --confidence must be between 0 and 1, or between 2 and 100",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    reference = args.reference
+    credit = args.credit_format_errors
+    significance = not args.no_significance
+    paths = args.files
     if not paths:
         print(__doc__)
         sys.exit(1)
@@ -965,38 +660,50 @@ def main():
             sys.exit(1)
         files.append(load_file(p))
 
-    if fmt_path is not None:
-        n = write_format_errors(files, fmt_path)
-        print(f"Wrote {n} format errors to {fmt_path}")
+    if args.format_errors is not None:
+        n = write_format_errors(files, args.format_errors)
+        print(f"Wrote {n} format errors to {args.format_errors}")
 
-    if plot_path is not None:
+    if args.plot is not None:
         if len(files) != 1:
             print("error: --plot takes exactly one input file", file=sys.stderr)
             sys.exit(1)
-        plot_tokens(files[0], plot_path)
-        print(f"Wrote plot to {plot_path}")
+        plot_tokens(files[0], args.plot)
+        print(f"Wrote plot to {args.plot}")
 
-    if flags["--json"]:
-        render_json(files, credit_format_errors=credit, significance=significance)
+    if args.json:
+        render_json(
+            files,
+            credit_format_errors=credit,
+            significance=significance,
+            reference=reference,
+            confidence=confidence,
+        )
         return
 
     for i, d in enumerate(files):
         if i:
             print()
-        if flags["--compare"] and len(files) > 1:
+        if args.compare and len(files) > 1:
             continue  # compare rendered once below
-        render_summary(d, credit_format_errors=credit, significance=significance)
-        if flags["--reasoning"]:
+        render_summary(
+            d,
+            credit_format_errors=credit,
+            significance=significance,
+            reference=reference,
+            confidence=confidence,
+        )
+        if args.reasoning:
             print()
             render_reasoning(d)
-        if flags["--categories"]:
+        if args.categories:
             print()
             render_categories(d, credit_format_errors=credit)
-        if flags["--questions"]:
+        if args.questions:
             print()
             render_questions(d)
 
-    if flags["--compare"] and len(files) > 1:
+    if args.compare and len(files) > 1:
         print()
         render_compare(files, credit_format_errors=credit)
 
